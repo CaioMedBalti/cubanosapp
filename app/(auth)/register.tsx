@@ -77,7 +77,7 @@ export default function RegisterScreen() {
         >
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
             <View style={styles.logoArea}>
-              <Text style={[styles.logoTitle, { color: theme.accent }]}>HAVANA</Text>
+              <Text style={[styles.logoTitle, { color: theme.accent }]}>CUBANOS</Text>
               <Text style={[styles.logoSub, { color: theme.textMuted }]}>
                 Colecionadores Premium
               </Text>

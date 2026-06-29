@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "havana",
-    "slug": "havana",
-    "scheme": "havana",
+    "name": "cubanos",
+    "slug": "cubanos",
+    "scheme": "cubanos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.havana.app"
+      "bundleIdentifier": "com.cubanos.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,14 +19,14 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.havana.app"
+      "package": "com.cubanos.app"
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
       "output": "single",
-      "name": "Havana",
-      "shortName": "Havana",
+      "name": "Cubanos",
+      "shortName": "Cubanos",
       "description": "App premium de colecionadores de charutos e whisky",
       "themeColor": "#EF9F27",
       "backgroundColor": "#0d0a08"

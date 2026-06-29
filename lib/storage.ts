@@ -1,6 +1,6 @@
 import { createMMKV } from 'react-native-mmkv';
 
-export const storage = createMMKV({ id: 'havana-storage' });
+export const storage = createMMKV({ id: 'cubanos-storage' });
 
 export const mmkvStorage = {
   getItem: (key: string): string | null => {

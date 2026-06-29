@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, ViewStyle } from 'reac
 import { useTheme } from '@/store/themeStore';
 import { withAlpha } from '@/lib/theme';
 
-interface HavanaCardProps {
+interface CubanosCardProps {
   title: string;
   subtitle?: string;
   imageUrl?: string | null;
@@ -13,7 +13,7 @@ interface HavanaCardProps {
   children?: React.ReactNode;
 }
 
-export function HavanaCard({
+export function CubanosCard({
   title,
   subtitle,
   imageUrl,
@@ -21,7 +21,7 @@ export function HavanaCard({
   onPress,
   style,
   children,
-}: HavanaCardProps) {
+}: CubanosCardProps) {
   const theme = useTheme();
 
   return (

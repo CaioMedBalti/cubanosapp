@@ -18,7 +18,7 @@ export const useThemeStore = create<ThemeState>()(
         set({ activeTheme: key, theme: THEMES[key] }),
     }),
     {
-      name: 'havana-theme',
+      name: 'cubanos-theme',
       storage: createJSONStorage(() => mmkvStorage),
     },
   ),

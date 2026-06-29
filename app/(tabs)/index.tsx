@@ -29,7 +29,7 @@ export default function FeedScreen() {
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: withAlpha(theme.border, 0.25) }]}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.headerTitle, { color: theme.accent }]}>HAVANA</Text>
+            <Text style={[styles.headerTitle, { color: theme.accent }]}>CUBANOS</Text>
             <View style={[styles.headerRule, { backgroundColor: withAlpha(theme.accent, 0.35) }]} />
             <Text style={[styles.headerSub, { color: theme.textMuted }]}>Feed</Text>
           </View>

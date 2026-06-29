@@ -25,7 +25,7 @@ export const useAuthStore = create<AuthState>()(
       signOut: () => set({ uid: null, profile: null }),
     }),
     {
-      name: 'havana-auth',
+      name: 'cubanos-auth',
       storage: createJSONStorage(() => mmkvStorage),
       partialize: (state) => ({ uid: state.uid, profile: state.profile }),
     },
