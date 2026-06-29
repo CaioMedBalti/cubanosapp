@@ -1,0 +1,191 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ListRenderItem,
+  ActivityIndicator,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/store/themeStore';
+import { VideoBackground } from '@/components/ui/VideoBackground';
+import { withAlpha } from '@/lib/theme';
+import { useHumidor } from '@/hooks/useHumidor';
+import { HumidorEntry } from '@/lib/firebase';
+
+const STATUS_LABEL: Record<HumidorEntry['status'], string> = {
+  intact: 'Intacto',
+  smoking: 'Em uso',
+  finished: 'Finalizado',
+};
+
+const STATUS_COLOR: Record<HumidorEntry['status'], string> = {
+  intact: '#4CAF50',
+  smoking: '#EF9F27',
+  finished: '#888',
+};
+
+function HumidorCard({ item }: { item: HumidorEntry }) {
+  const theme = useTheme();
+  return (
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.card,
+          borderColor: withAlpha(theme.border, 0.4),
+          shadowColor: theme.accent,
+        },
+      ]}
+    >
+      <View style={[styles.cardThumb, { backgroundColor: withAlpha(theme.accent, 0.1) }]}>
+        <Text style={styles.thumbEmoji}>🍃</Text>
+        <Text style={[styles.thumbQty, { color: theme.accent }]}>{item.quantity}x</Text>
+      </View>
+      <Text style={[styles.cardBrand, { color: theme.accent }]}>{item.brand}</Text>
+      <Text style={[styles.cardName, { color: theme.text }]} numberOfLines={2}>
+        {item.cigarName}
+      </Text>
+      <View
+        style={[
+          styles.statusBadge,
+          { backgroundColor: withAlpha(STATUS_COLOR[item.status], 0.15) },
+        ]}
+      >
+        <Text style={[styles.statusText, { color: STATUS_COLOR[item.status] }]}>
+          {STATUS_LABEL[item.status]}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+export default function HumidorScreen() {
+  const theme = useTheme();
+  const { items, loading } = useHumidor();
+
+  const total = items.reduce((s, i) => s + i.quantity, 0);
+
+  const renderItem: ListRenderItem<HumidorEntry> = ({ item }) => (
+    <HumidorCard item={item} />
+  );
+
+  return (
+    <VideoBackground style={styles.container}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={[styles.header, { borderBottomColor: withAlpha(theme.border, 0.25) }]}>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Humidor</Text>
+          {!loading && (
+            <Text style={[styles.headerCount, { color: theme.textMuted }]}>
+              {total} charuto{total !== 1 ? 's' : ''}
+            </Text>
+          )}
+        </View>
+
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator color={theme.accent} />
+          </View>
+        ) : items.length === 0 ? (
+          <View style={styles.center}>
+            <Text style={[styles.emptyIcon, { color: withAlpha(theme.accent, 0.4) }]}>📦</Text>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>Humidor vazio</Text>
+            <Text style={[styles.emptyHint, { color: theme.textMuted }]}>
+              Use o botão Seed no Perfil ou toque em + para adicionar charutos.
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={items}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            columnWrapperStyle={styles.row}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+
+        {/* FAB */}
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: theme.accent }]}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add" size={28} color="#000" />
+        </TouchableOpacity>
+      </SafeAreaView>
+    </VideoBackground>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  safe: { flex: 1 },
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 10,
+  },
+  headerTitle: { fontSize: 22, fontWeight: '700' },
+  headerCount: { fontSize: 13 },
+  list: { padding: 12, paddingBottom: 100 },
+  row: { gap: 10 },
+  card: {
+    flex: 1,
+    margin: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    gap: 6,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  cardThumb: {
+    width: '100%',
+    aspectRatio: 1.4,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+    gap: 4,
+  },
+  thumbEmoji: { fontSize: 28 },
+  thumbQty: { fontSize: 13, fontWeight: '800' },
+  cardBrand: { fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
+  cardName: { fontSize: 14, fontWeight: '600' },
+  statusBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6, alignSelf: 'flex-start' },
+  statusText: { fontSize: 10, fontWeight: '700' },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    padding: 32,
+  },
+  emptyIcon: { fontSize: 48 },
+  emptyTitle: { fontSize: 18, fontWeight: '700' },
+  emptyHint: { fontSize: 13, textAlign: 'center', lineHeight: 20 },
+});

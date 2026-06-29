@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "havana",
+    "slug": "havana",
+    "scheme": "havana",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.havana.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0d0a08",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.havana.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single",
+      "name": "Havana",
+      "shortName": "Havana",
+      "description": "App premium de colecionadores de charutos e whisky",
+      "themeColor": "#EF9F27",
+      "backgroundColor": "#0d0a08"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-video",
+      "expo-splash-screen",
+      "expo-font",
+      "expo-status-bar"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
