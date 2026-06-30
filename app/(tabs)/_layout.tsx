@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/themeStore';
 import { withAlpha } from '@/lib/theme';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -23,6 +24,12 @@ const TABS: TabConfig[] = [
 
 export default function TabsLayout() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
+
+  // On web accessed from iPhone, Platform.OS === 'web' so the ios check would
+  // miss the safe area. Using insets.bottom covers both native and mobile web.
+  const bottomPad = insets.bottom > 0 ? insets.bottom : Platform.OS === 'ios' ? 20 : 8;
+  const tabHeight = insets.bottom > 0 ? 60 + insets.bottom : Platform.OS === 'ios' ? 84 : 64;
 
   return (
     <Tabs
@@ -32,9 +39,9 @@ export default function TabsLayout() {
           backgroundColor: theme.surface,
           borderTopColor: withAlpha(theme.accent, 0.3),
           borderTopWidth: 1,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+          paddingBottom: bottomPad,
           paddingTop: 8,
-          height: Platform.OS === 'ios' ? 84 : 64,
+          height: tabHeight,
         },
         tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.textMuted,

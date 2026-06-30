@@ -36,7 +36,14 @@
       "expo-video",
       "expo-splash-screen",
       "expo-font",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O app acessa suas fotos para identificar charutos.",
+          "cameraPermission": "O app usa a câmera para fotografar a anilha do charuto."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

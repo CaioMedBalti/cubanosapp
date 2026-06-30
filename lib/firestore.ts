@@ -67,6 +67,13 @@ export async function addHumidorItem(
   await addDoc(collection(db, COLLECTIONS.USERS, userId, 'humidor'), item);
 }
 
+export async function batchAddHumidorItems(
+  userId: string,
+  items: Omit<HumidorEntry, 'id' | 'userId'>[],
+): Promise<void> {
+  await Promise.all(items.map((item) => addDoc(collection(db, COLLECTIONS.USERS, userId, 'humidor'), item)));
+}
+
 // ─── Seed ─────────────────────────────────────────────────────────────────────
 
 export async function seedCatalog(): Promise<void> {

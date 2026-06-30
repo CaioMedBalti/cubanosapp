@@ -159,4 +159,25 @@ export interface HumidorEntry {
   quantity: number;
   status: 'intact' | 'smoking' | 'finished';
   cigarId?: string | null;
+  // AI enrichment — optional, populated when added via AI identification
+  origin?: string;
+  strength?: string;
+  flavorNotes?: string[];
+  curiosities?: string;
+}
+
+export interface CigarAIResult {
+  name: string;
+  brand: string;
+  origin: string;
+  strength: string;
+  flavorNotes: string[];
+  curiosities: string;
+}
+
+export interface BulkParseItem {
+  cigarName: string;
+  brand: string;
+  quantity: number;
+  status: 'intact';
 }

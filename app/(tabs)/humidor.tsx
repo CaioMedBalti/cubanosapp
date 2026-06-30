@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,17 @@ import {
   StyleSheet,
   ListRenderItem,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/themeStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { withAlpha } from '@/lib/theme';
 import { useHumidor } from '@/hooks/useHumidor';
 import { HumidorEntry } from '@/lib/firebase';
+import { AddCigarModal } from '@/components/modals/AddCigarModal';
 
 const STATUS_LABEL: Record<HumidorEntry['status'], string> = {
   intact: 'Intacto',
@@ -49,6 +52,11 @@ function HumidorCard({ item }: { item: HumidorEntry }) {
       <Text style={[styles.cardName, { color: theme.text }]} numberOfLines={2}>
         {item.cigarName}
       </Text>
+      {item.origin && (
+        <Text style={[styles.cardMeta, { color: theme.textMuted }]} numberOfLines={1}>
+          {item.origin}{item.strength ? ` · ${item.strength}` : ''}
+        </Text>
+      )}
       <View
         style={[
           styles.statusBadge,
@@ -65,9 +73,15 @@ function HumidorCard({ item }: { item: HumidorEntry }) {
 
 export default function HumidorScreen() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { items, loading } = useHumidor();
+  const [modalVisible, setModalVisible] = useState(false);
 
   const total = items.reduce((s, i) => s + i.quantity, 0);
+
+  const tabBarHeight = Platform.OS === 'ios' ? 84 : Platform.OS === 'android' ? 64 : 64;
+  const fabBottom = insets.bottom + tabBarHeight + 16;
+  const listPaddingBottom = insets.bottom + tabBarHeight + 80;
 
   const renderItem: ListRenderItem<HumidorEntry> = ({ item }) => (
     <HumidorCard item={item} />
@@ -94,7 +108,7 @@ export default function HumidorScreen() {
             <Text style={[styles.emptyIcon, { color: withAlpha(theme.accent, 0.4) }]}>📦</Text>
             <Text style={[styles.emptyTitle, { color: theme.text }]}>Humidor vazio</Text>
             <Text style={[styles.emptyHint, { color: theme.textMuted }]}>
-              Use o botão Seed no Perfil ou toque em + para adicionar charutos.
+              Toque em + para adicionar seu primeiro charuto.
             </Text>
           </View>
         ) : (
@@ -104,19 +118,25 @@ export default function HumidorScreen() {
             keyExtractor={(item) => item.id}
             numColumns={2}
             columnWrapperStyle={styles.row}
-            contentContainerStyle={styles.list}
+            contentContainerStyle={[styles.list, { paddingBottom: listPaddingBottom }]}
             showsVerticalScrollIndicator={false}
           />
         )}
 
         {/* FAB */}
         <TouchableOpacity
-          style={[styles.fab, { backgroundColor: theme.accent }]}
+          style={[styles.fab, { backgroundColor: theme.accent, bottom: fabBottom }]}
           activeOpacity={0.8}
+          onPress={() => setModalVisible(true)}
         >
           <Ionicons name="add" size={28} color="#000" />
         </TouchableOpacity>
       </SafeAreaView>
+
+      <AddCigarModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+      />
     </VideoBackground>
   );
 }
@@ -134,7 +154,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 22, fontWeight: '700' },
   headerCount: { fontSize: 13 },
-  list: { padding: 12, paddingBottom: 100 },
+  list: { padding: 12 },
   row: { gap: 10 },
   card: {
     flex: 1,
@@ -161,11 +181,11 @@ const styles = StyleSheet.create({
   thumbQty: { fontSize: 13, fontWeight: '800' },
   cardBrand: { fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   cardName: { fontSize: 14, fontWeight: '600' },
+  cardMeta: { fontSize: 10, letterSpacing: 0.2 },
   statusBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6, alignSelf: 'flex-start' },
   statusText: { fontSize: 10, fontWeight: '700' },
   fab: {
     position: 'absolute',
-    bottom: 24,
     right: 24,
     width: 56,
     height: 56,
