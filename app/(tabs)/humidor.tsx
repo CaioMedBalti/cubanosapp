@@ -8,6 +8,7 @@ import {
   ListRenderItem,
   ActivityIndicator,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +19,7 @@ import { withAlpha } from '@/lib/theme';
 import { useHumidor } from '@/hooks/useHumidor';
 import { HumidorEntry } from '@/lib/firebase';
 import { AddCigarModal } from '@/components/modals/AddCigarModal';
+import { CigarDetailSheet } from '@/components/modals/CigarDetailSheet';
 
 const STATUS_LABEL: Record<HumidorEntry['status'], string> = {
   intact: 'Intacto',
@@ -31,10 +33,10 @@ const STATUS_COLOR: Record<HumidorEntry['status'], string> = {
   finished: '#888',
 };
 
-function HumidorCard({ item }: { item: HumidorEntry }) {
+function HumidorCard({ item, onPress }: { item: HumidorEntry; onPress: () => void }) {
   const theme = useTheme();
   return (
-    <View
+    <TouchableOpacity
       style={[
         styles.card,
         {
@@ -43,11 +45,22 @@ function HumidorCard({ item }: { item: HumidorEntry }) {
           shadowColor: theme.accent,
         },
       ]}
+      onPress={onPress}
+      activeOpacity={0.8}
     >
-      <View style={[styles.cardThumb, { backgroundColor: withAlpha(theme.accent, 0.1) }]}>
-        <Text style={styles.thumbEmoji}>🍃</Text>
-        <Text style={[styles.thumbQty, { color: theme.accent }]}>{item.quantity}x</Text>
-      </View>
+      {item.photoUrl ? (
+        <View style={styles.cardImageWrapper}>
+          <Image source={{ uri: item.photoUrl }} style={styles.cardImage} />
+          <View style={[styles.cardQtyBadge, { backgroundColor: withAlpha('#000', 0.55) }]}>
+            <Text style={[styles.cardQtyText, { color: theme.accent }]}>{item.quantity}x</Text>
+          </View>
+        </View>
+      ) : (
+        <View style={[styles.cardThumb, { backgroundColor: withAlpha(theme.accent, 0.1) }]}>
+          <Text style={styles.thumbEmoji}>🍃</Text>
+          <Text style={[styles.thumbQty, { color: theme.accent }]}>{item.quantity}x</Text>
+        </View>
+      )}
       <Text style={[styles.cardBrand, { color: theme.accent }]}>{item.brand}</Text>
       <Text style={[styles.cardName, { color: theme.text }]} numberOfLines={2}>
         {item.cigarName}
@@ -67,7 +80,7 @@ function HumidorCard({ item }: { item: HumidorEntry }) {
           {STATUS_LABEL[item.status]}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -76,6 +89,7 @@ export default function HumidorScreen() {
   const insets = useSafeAreaInsets();
   const { items, loading } = useHumidor();
   const [modalVisible, setModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<HumidorEntry | null>(null);
 
   const total = items.reduce((s, i) => s + i.quantity, 0);
 
@@ -84,7 +98,7 @@ export default function HumidorScreen() {
   const listPaddingBottom = insets.bottom + tabBarHeight + 80;
 
   const renderItem: ListRenderItem<HumidorEntry> = ({ item }) => (
-    <HumidorCard item={item} />
+    <HumidorCard item={item} onPress={() => setSelectedItem(item)} />
   );
 
   return (
@@ -137,6 +151,11 @@ export default function HumidorScreen() {
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
       />
+
+      <CigarDetailSheet
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+      />
     </VideoBackground>
   );
 }
@@ -176,6 +195,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 4,
     gap: 4,
+  },
+  cardImageWrapper: {
+    width: '100%',
+    aspectRatio: 1.4,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  cardQtyBadge: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  cardQtyText: {
+    fontSize: 11,
+    fontWeight: '800',
   },
   thumbEmoji: { fontSize: 28 },
   thumbQty: { fontSize: 13, fontWeight: '800' },

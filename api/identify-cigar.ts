@@ -15,7 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     messages: [
       {
         role: 'user',
-        content: `You are a master cigar sommelier with encyclopedic knowledge. Identify this cigar and return ONLY valid JSON with no markdown fences. Required keys: name (string), brand (string), origin (country, string), strength (one of: Suave, Médio-Suave, Médio, Médio-Forte, Forte), flavorNotes (array of 3–5 descriptors in Portuguese), curiosities (1–2 sentences in Portuguese about history or distinction). Make your best educated guess if uncertain.
+        content: `You are a master cigar sommelier with encyclopedic knowledge. Identify this cigar and return ONLY valid JSON with no markdown fences. Required keys: name (string), brand (string), origin (country, string), strength (one of: Suave, Médio-Suave, Médio, Médio-Forte, Forte), flavorNotes (array of 3–5 descriptors in Portuguese), curiosities (1–2 sentences in Portuguese, a short teaser fact), history (3–5 sentences in Portuguese covering: country/region of origin, founding story of the brand, how this vitola came to exist, notable historical events or awards — for enthusiasts who want depth). Make your best educated guess if uncertain.
 
 Cigar: "${name}"`,
       },
@@ -34,6 +34,7 @@ Cigar: "${name}"`,
       strength: 'Médio',
       flavorNotes: ['Madeira', 'Cedro', 'Terra'],
       curiosities: 'Um charuto clássico e apreciado por colecionadores.',
+      history: 'Cuba é reconhecida mundialmente pela qualidade excepcional de seus charutos, cultivados em solos únicos do Vale de Viñales.',
     });
   }
 }

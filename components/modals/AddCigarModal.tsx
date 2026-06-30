@@ -27,6 +27,7 @@ import { withAlpha } from '@/lib/theme';
 import { useAuthStore } from '@/store/authStore';
 import { addHumidorItem, batchAddHumidorItems } from '@/lib/firestore';
 import { identifyCigar, parseBulkText, identifyCigarImage } from '@/lib/ai';
+import { uploadUserCigarPhoto, getStockPhotoUrls } from '@/lib/photos';
 import type { CigarAIResult, BulkParseItem, HumidorEntry } from '@/lib/firebase';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -222,6 +223,131 @@ function LoadingDots() {
   );
 }
 
+// ─── Photo Picker Section ─────────────────────────────────────────────────────
+
+function PhotoPickerSection({
+  uid,
+  selectedPhotoUrl,
+  onPhotoSelected,
+}: {
+  uid: string;
+  selectedPhotoUrl: string | null;
+  onPhotoSelected: (url: string) => void;
+}) {
+  const theme = useTheme();
+  const [showStock, setShowStock] = useState(false);
+  const [stockPhotos, setStockPhotos] = useState<string[]>([]);
+  const [stockLoading, setStockLoading] = useState(false);
+  const [photoLoading, setPhotoLoading] = useState(false);
+
+  const handleGallery = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      base64: false,
+    });
+    if (!result.canceled && result.assets?.[0]) {
+      setPhotoLoading(true);
+      try {
+        const asset = result.assets[0];
+        const response = await fetch(asset.uri);
+        const blob = await response.blob();
+        const url = await uploadUserCigarPhoto(uid, blob);
+        onPhotoSelected(url);
+      } catch { /* photo is optional */ }
+      finally { setPhotoLoading(false); }
+    }
+  };
+
+  const handleToggleStock = async () => {
+    if (showStock) {
+      setShowStock(false);
+      return;
+    }
+    setShowStock(true);
+    if (stockPhotos.length === 0) {
+      setStockLoading(true);
+      try {
+        const urls = await getStockPhotoUrls();
+        setStockPhotos(urls);
+      } catch { /* ignore */ }
+      finally { setStockLoading(false); }
+    }
+  };
+
+  return (
+    <View style={styles.photoSection}>
+      <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>
+        Foto do charuto{' '}
+        <Text style={{ fontWeight: '400', textTransform: 'none' }}>(opcional)</Text>
+      </Text>
+
+      {/* Selected photo thumbnail */}
+      {selectedPhotoUrl && (
+        <Image source={{ uri: selectedPhotoUrl }} style={styles.selectedThumb} />
+      )}
+
+      <View style={styles.photoButtons}>
+        <TouchableOpacity
+          style={[styles.photoBtn, { borderColor: withAlpha(theme.border, 0.5), backgroundColor: withAlpha(theme.card, 0.6) }]}
+          onPress={handleGallery}
+          disabled={photoLoading}
+        >
+          {photoLoading
+            ? <ActivityIndicator size="small" color={theme.accent} />
+            : <Ionicons name="camera-outline" size={16} color={theme.accent} />
+          }
+          <Text style={[styles.photoBtnText, { color: theme.textMuted }]}>
+            {selectedPhotoUrl ? 'Trocar foto' : 'Tirar / galeria'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.photoBtn,
+            {
+              borderColor: showStock ? theme.accent : withAlpha(theme.border, 0.5),
+              backgroundColor: showStock ? withAlpha(theme.accent, 0.1) : withAlpha(theme.card, 0.6),
+            },
+          ]}
+          onPress={handleToggleStock}
+        >
+          <Ionicons name="images-outline" size={16} color={showStock ? theme.accent : theme.textMuted} />
+          <Text style={[styles.photoBtnText, { color: showStock ? theme.accent : theme.textMuted }]}>
+            Catálogo
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Stock photo grid */}
+      {showStock && (
+        <View style={styles.stockGrid}>
+          {stockLoading ? (
+            <ActivityIndicator color={theme.accent} style={{ margin: 16 }} />
+          ) : stockPhotos.length === 0 ? (
+            <Text style={[styles.stockEmpty, { color: theme.textMuted }]}>
+              Nenhuma foto no catálogo ainda. Suba fotos em cigar-stock/ no Firebase Storage.
+            </Text>
+          ) : (
+            stockPhotos.map((url) => (
+              <TouchableOpacity
+                key={url}
+                onPress={() => { onPhotoSelected(url); setShowStock(false); }}
+                style={[
+                  styles.stockItem,
+                  selectedPhotoUrl === url && { borderColor: theme.accent, borderWidth: 2 },
+                ]}
+              >
+                <Image source={{ uri: url }} style={styles.stockImage} />
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 
 export function AddCigarModal({ visible, onClose }: Props) {
@@ -260,6 +386,7 @@ export function AddCigarModal({ visible, onClose }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [status, setStatus] = useState<HumidorEntry['status']>('intact');
   const [saving, setSaving] = useState(false);
+  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
 
   // Single mode
   const [cigarName, setCigarName] = useState('');
@@ -290,6 +417,7 @@ export function AddCigarModal({ visible, onClose }: Props) {
         setQuantity(1);
         setStatus('intact');
         setSaving(false);
+        setSelectedPhotoUrl(null);
         setCigarName('');
         setSinglePhase('idle');
         setSingleResult(null);
@@ -337,6 +465,8 @@ export function AddCigarModal({ visible, onClose }: Props) {
         strength: singleResult.strength,
         flavorNotes: singleResult.flavorNotes,
         curiosities: singleResult.curiosities,
+        history: singleResult.history,
+        photoUrl: selectedPhotoUrl ?? undefined,
       });
       handleClose();
     } catch {
@@ -453,6 +583,8 @@ export function AddCigarModal({ visible, onClose }: Props) {
         strength: scanResult.strength,
         flavorNotes: scanResult.flavorNotes,
         curiosities: scanResult.curiosities,
+        history: scanResult.history,
+        photoUrl: selectedPhotoUrl ?? undefined,
       });
       handleClose();
     } catch {
@@ -512,9 +644,9 @@ export function AddCigarModal({ visible, onClose }: Props) {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
+            {/* ── SINGLE ADD TAB ── */}
             {mainTab === 'single' && (
               <View style={styles.section}>
-                {/* Name Input */}
                 <View style={styles.field}>
                   <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>
                     Nome do charuto
@@ -543,7 +675,6 @@ export function AddCigarModal({ visible, onClose }: Props) {
                   />
                 </View>
 
-                {/* Identify Button */}
                 {singlePhase !== 'done' && (
                   <TouchableOpacity
                     style={[
@@ -570,25 +701,30 @@ export function AddCigarModal({ visible, onClose }: Props) {
                   </TouchableOpacity>
                 )}
 
-                {/* Error */}
                 {singlePhase === 'error' && (
                   <Text style={styles.errorText}>{singleError}</Text>
                 )}
 
-                {/* Preview Card */}
                 {singlePhase === 'done' && singleResult && (
                   <>
                     <CigarPreviewCard result={singleResult} />
 
-                    {/* Re-identify button */}
                     <TouchableOpacity
-                      onPress={() => { setSinglePhase('idle'); setSingleResult(null); }}
+                      onPress={() => { setSinglePhase('idle'); setSingleResult(null); setSelectedPhotoUrl(null); }}
                       style={styles.retryBtn}
                     >
                       <Text style={[styles.retryText, { color: theme.textMuted }]}>
                         Alterar ↩
                       </Text>
                     </TouchableOpacity>
+
+                    {uid && (
+                      <PhotoPickerSection
+                        uid={uid}
+                        selectedPhotoUrl={selectedPhotoUrl}
+                        onPhotoSelected={setSelectedPhotoUrl}
+                      />
+                    )}
 
                     <QuantityStepper value={quantity} onChange={setQuantity} />
                     <StatusPicker value={status} onChange={setStatus} />
@@ -614,9 +750,9 @@ export function AddCigarModal({ visible, onClose }: Props) {
               </View>
             )}
 
+            {/* ── IMPORT TAB ── */}
             {mainTab === 'import' && (
               <View style={styles.section}>
-                {/* Import Sub-tabs */}
                 <View style={styles.tabRow}>
                   <TabPill
                     label="📝  Colar lista"
@@ -819,6 +955,14 @@ export function AddCigarModal({ visible, onClose }: Props) {
                       <>
                         <CigarPreviewCard result={scanResult} />
 
+                        {uid && (
+                          <PhotoPickerSection
+                            uid={uid}
+                            selectedPhotoUrl={selectedPhotoUrl}
+                            onPhotoSelected={setSelectedPhotoUrl}
+                          />
+                        )}
+
                         <QuantityStepper value={quantity} onChange={setQuantity} />
                         <StatusPicker value={status} onChange={setStatus} />
 
@@ -845,7 +989,6 @@ export function AddCigarModal({ visible, onClose }: Props) {
               </View>
             )}
 
-            {/* Bottom spacer */}
             <View style={{ height: 24 }} />
           </ScrollView>
         </Animated.View>
@@ -863,7 +1006,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   sheet: {
     borderTopLeftRadius: 24,
@@ -1137,5 +1280,58 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+  },
+
+  // Photo Picker
+  photoSection: {
+    gap: 10,
+  },
+  selectedThumb: {
+    width: '100%',
+    height: 120,
+    borderRadius: 10,
+    resizeMode: 'cover',
+  },
+  photoButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  photoBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  photoBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  stockGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  stockItem: {
+    width: '31%',
+    aspectRatio: 1,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  stockImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  stockEmpty: {
+    fontSize: 12,
+    textAlign: 'center',
+    padding: 16,
+    fontStyle: 'italic',
   },
 });

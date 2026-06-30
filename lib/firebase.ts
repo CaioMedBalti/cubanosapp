@@ -164,6 +164,8 @@ export interface HumidorEntry {
   strength?: string;
   flavorNotes?: string[];
   curiosities?: string;
+  history?: string;
+  photoUrl?: string;
 }
 
 export interface CigarAIResult {
@@ -173,6 +175,7 @@ export interface CigarAIResult {
   strength: string;
   flavorNotes: string[];
   curiosities: string;
+  history: string;
 }
 
 export interface BulkParseItem {

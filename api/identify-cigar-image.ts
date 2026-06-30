@@ -28,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
           {
             type: 'text',
-            text: 'This is a photo of a cigar band (anilha). Identify the cigar and return ONLY valid JSON with no markdown fences. Required keys: name (string), brand (string), origin (country), strength (one of: Suave, Médio-Suave, Médio, Médio-Forte, Forte), flavorNotes (array of 3–5 in Portuguese), curiosities (1–2 sentences in Portuguese). Make your best inference if the image is unclear.',
+            text: 'This is a photo of a cigar band (anilha). Identify the cigar and return ONLY valid JSON with no markdown fences. Required keys: name (string), brand (string), origin (country), strength (one of: Suave, Médio-Suave, Médio, Médio-Forte, Forte), flavorNotes (array of 3–5 in Portuguese), curiosities (1–2 sentences in Portuguese, a short teaser fact), history (3–5 sentences in Portuguese covering brand founding story, origin region, how this vitola came to exist, notable events or awards — for enthusiasts). Make your best inference if the image is unclear.',
           },
         ],
       },
