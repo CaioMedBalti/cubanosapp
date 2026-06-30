@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new OpenAI({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -9,8 +9,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { name } = req.body as { name?: string };
   if (!name?.trim()) return res.status(400).json({ error: 'name required' });
 
-  const message = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
     max_tokens: 512,
     messages: [
       {
@@ -22,7 +22,7 @@ Cigar: "${name}"`,
     ],
   });
 
-  const raw = (message.content[0] as { text: string }).text.trim();
+  const raw = (response.choices[0].message.content ?? '').trim();
 
   try {
     return res.status(200).json(JSON.parse(raw));

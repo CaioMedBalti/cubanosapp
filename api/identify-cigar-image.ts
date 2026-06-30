@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new OpenAI({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -15,26 +15,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'imageBase64 and mimeType required' });
   }
 
-  const validMime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const;
-  type ValidMime = typeof validMime[number];
-  if (!validMime.includes(mimeType as ValidMime)) {
-    return res.status(400).json({ error: 'unsupported mimeType' });
-  }
-
-  const message = await client.messages.create({
-    model: 'claude-opus-4-8',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 512,
     messages: [
       {
         role: 'user',
         content: [
           {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: mimeType as ValidMime,
-              data: imageBase64,
-            },
+            type: 'image_url',
+            image_url: { url: `data:${mimeType};base64,${imageBase64}` },
           },
           {
             type: 'text',
@@ -45,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ],
   });
 
-  const raw = (message.content[0] as { text: string }).text.trim();
+  const raw = (response.choices[0].message.content ?? '').trim();
 
   try {
     return res.status(200).json(JSON.parse(raw));

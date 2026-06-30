@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new OpenAI({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -9,13 +9,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { text } = req.body as { text?: string };
   if (!text?.trim()) return res.status(400).json({ error: 'text required' });
 
-  const message = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
     max_tokens: 1024,
     messages: [
       {
         role: 'user',
-        content: `You are a cigar inventory assistant. Parse the following free-text list of cigars into a JSON array. No markdown fences — return ONLY the raw JSON array. Each element must have: cigarName (full cigar name without brand, string), brand (string), quantity (number, default 1 if not specified), status ("intact"). Split brand from name correctly, e.g. "Cohiba Siglo VI" → brand:"Cohiba", cigarName:"Siglo VI". Recognize quantity patterns: x3, ×2, (3), 3x, "três", "3 unidades".
+        content: `You are a cigar inventory assistant. Parse the following free-text list of cigars into a JSON array. No markdown fences — return ONLY the raw JSON array. Each element must have: cigarName (full cigar name without brand, string), brand (string), quantity (number, default 1 if not specified), status ("intact"). Split brand from name correctly, e.g. "Cohiba Siglo VI" → brand:"Cohiba", cigarName:"Siglo VI". Recognize quantity patterns: x3, ×2, (3), 3x.
 
 Text:
 ${text}`,
@@ -23,7 +23,7 @@ ${text}`,
     ],
   });
 
-  const raw = (message.content[0] as { text: string }).text.trim();
+  const raw = (response.choices[0].message.content ?? '').trim();
 
   try {
     const parsed = JSON.parse(raw);
