@@ -150,6 +150,7 @@ export default function HumidorScreen() {
           />
         ) : viewMode === 'list' ? (
           <FlatList
+            key="list"
             data={items}
             renderItem={({ item }) => (
               <HumidorListRow item={item} onPress={() => setSelectedItem(item)} />
@@ -160,6 +161,7 @@ export default function HumidorScreen() {
           />
         ) : (
           <FlatList
+            key="grid"
             data={items}
             renderItem={renderItem}
             keyExtractor={(item) => item.id}

@@ -6,7 +6,9 @@ import {
   onSnapshot,
   getDocs,
   addDoc,
+  deleteDoc,
   serverTimestamp,
+  CollectionReference,
   Unsubscribe,
 } from 'firebase/firestore';
 import {
@@ -74,92 +76,62 @@ export async function batchAddHumidorItems(
   await Promise.all(items.map((item) => addDoc(collection(db, COLLECTIONS.USERS, userId, 'humidor'), item)));
 }
 
-// ─── Seed ─────────────────────────────────────────────────────────────────────
+// ─── Example data reset ────────────────────────────────────────────────────────
+// Replaces the old unprotected "Seed" flow (which duplicated data on every tap).
+// Wipes the catalog/posts/humidor and recreates a small, clearly-labeled set of
+// example entries — see hooks/useOneTimeDataReset.ts for when this runs.
 
-export async function seedCatalog(): Promise<void> {
+async function clearCollection(colRef: CollectionReference): Promise<void> {
+  const snap = await getDocs(colRef);
+  await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+}
+
+export async function resetExampleData(userId: string, authorName: string): Promise<void> {
+  await Promise.all([
+    clearCollection(collection(db, COLLECTIONS.CIGARS)),
+    clearCollection(collection(db, COLLECTIONS.WHISKIES)),
+    clearCollection(collection(db, COLLECTIONS.POSTS)),
+    clearCollection(collection(db, COLLECTIONS.USERS, userId, 'humidor')),
+  ]);
+
   const cigars: Omit<CigarCatalog, 'id'>[] = [
     { name: 'Siglo VI', brand: 'Cohiba', origin: 'Cuba', strength: 'Médio-Forte', flavorNotes: ['Chocolate', 'Cedro', 'Terra'], communityRating: 5 },
     { name: 'Serie D No.4', brand: 'Partagás', origin: 'Cuba', strength: 'Forte', flavorNotes: ['Terra', 'Couro', 'Pimenta'], communityRating: 4 },
     { name: 'No.2', brand: 'Montecristo', origin: 'Cuba', strength: 'Médio', flavorNotes: ['Creme', 'Cedro', 'Nozes'], communityRating: 5 },
-    { name: 'Churchill', brand: 'Romeo y Julieta', origin: 'Cuba', strength: 'Médio', flavorNotes: ['Flores', 'Madeira', 'Creme'], communityRating: 4 },
-    { name: 'BHK 54', brand: 'Cohiba', origin: 'Cuba', strength: 'Forte', flavorNotes: ['Chocolate Amargo', 'Pimenta', 'Cedro'], communityRating: 5 },
-    { name: 'Petit Edmundo', brand: 'Montecristo', origin: 'Cuba', strength: 'Forte', flavorNotes: ['Espresso', 'Pimenta Preta', 'Cedro'], communityRating: 4 },
   ];
 
   const whiskies: Omit<WhiskyCatalog, 'id'>[] = [
     { name: 'Glenfiddich 18', brand: 'Glenfiddich', region: 'Speyside', age: 18, flavorNotes: ['Mel', 'Laranja', 'Especiarias'], communityRating: 4 },
     { name: 'Macallan 12', brand: 'Macallan', region: 'Speyside', age: 12, flavorNotes: ['Caramelo', 'Frutas Secas', 'Vanilla'], communityRating: 4 },
     { name: 'Laphroaig 10', brand: 'Laphroaig', region: 'Islay', age: 10, flavorNotes: ['Turfa', 'Defumado', 'Iodo'], communityRating: 4 },
-    { name: 'Oban 14', brand: 'Oban', region: 'Highland', age: 14, flavorNotes: ['Mar', 'Sal', 'Cítrico'], communityRating: 4 },
-    { name: 'Yamazaki 12', brand: 'Suntory', region: 'Japan', age: 12, flavorNotes: ['Pêssego', 'Vanilla', 'Carvalho Japonês'], communityRating: 5 },
-    { name: 'Balvenie 14 Caribbean', brand: 'Balvenie', region: 'Speyside', age: 14, flavorNotes: ['Coco', 'Baunilha', 'Mel'], communityRating: 4 },
+  ];
+
+  // cigarId aponta pra chave do catálogo local de imagens (lib/cigarImages.ts /
+  // assets/charutos/cigar-mapping.json), demonstrando o matching já resolvido.
+  const humidorItems: Omit<HumidorEntry, 'id' | 'userId'>[] = [
+    { cigarName: 'Siglo VI', brand: 'Cohiba', quantity: 3, status: 'intact', cigarId: 'Cohiba-Siglo-VI.png', unidentified: false, notes: 'Exemplo' },
+    { cigarName: 'Serie D No.4', brand: 'Partagás', quantity: 5, status: 'intact', cigarId: 'Partagas-Serie-D-No4.png', unidentified: false, notes: 'Exemplo' },
+    { cigarName: 'No.2', brand: 'Montecristo', quantity: 2, status: 'smoking', cigarId: 'Montecristo-No2.png', unidentified: false, notes: 'Exemplo' },
+  ];
+
+  const posts: Omit<FeedPost, 'id'>[] = [
+    {
+      userId,
+      authorName,
+      caption: 'Exemplo — experiência com um Cohiba Siglo VI, notas de chocolate amargo e cedro no final.',
+      cigarName: 'Cohiba Siglo VI',
+      whiskyName: 'Glenfiddich 18',
+      rating: 5,
+      likesCount: 12,
+      commentsCount: 2,
+      createdAt: serverTimestamp(),
+    },
   ];
 
   await Promise.all([
     ...cigars.map((c) => addDoc(collection(db, COLLECTIONS.CIGARS), c)),
     ...whiskies.map((w) => addDoc(collection(db, COLLECTIONS.WHISKIES), w)),
+    ...humidorItems.map((item) => addDoc(collection(db, COLLECTIONS.USERS, userId, 'humidor'), item)),
+    ...posts.map((p) => addDoc(collection(db, COLLECTIONS.POSTS), p)),
   ]);
-}
-
-export async function seedPosts(userId: string, authorName: string): Promise<void> {
-  const posts: Omit<FeedPost, 'id'>[] = [
-    {
-      userId,
-      authorName,
-      caption: 'Experiência incrível com esse Cohiba. Notas de chocolate amargo e cedro no final. Um dos melhores que já fumei.',
-      cigarName: 'Cohiba Siglo VI',
-      whiskyName: 'Glenfiddich 18',
-      rating: 5,
-      likesCount: 42,
-      commentsCount: 7,
-      createdAt: serverTimestamp(),
-    },
-    {
-      userId,
-      authorName,
-      caption: 'Tarde perfeita. O Partagás combinou perfeitamente com o Macallan. Fumadores, recomendem mais pairings assim!',
-      cigarName: 'Partagás Serie D No.4',
-      whiskyName: 'Macallan 12',
-      rating: 4,
-      likesCount: 28,
-      commentsCount: 3,
-      createdAt: serverTimestamp(),
-    },
-    {
-      userId,
-      authorName,
-      caption: 'Primeiro Montecristo. Ficou acima das expectativas — cremoso, equilibrado, longo. Já encaixotei mais seis.',
-      cigarName: 'Montecristo No.2',
-      rating: 4,
-      likesCount: 19,
-      commentsCount: 5,
-      createdAt: serverTimestamp(),
-    },
-    {
-      userId,
-      authorName,
-      caption: 'Degustação com o clube ontem. Seis rótulos diferentes, sete charutos, noite memorável.',
-      whiskyName: 'Laphroaig 10',
-      rating: 5,
-      likesCount: 61,
-      commentsCount: 14,
-      createdAt: serverTimestamp(),
-    },
-  ];
-
-  await Promise.all(posts.map((p) => addDoc(collection(db, COLLECTIONS.POSTS), p)));
-}
-
-export async function seedHumidor(userId: string): Promise<void> {
-  const items: Omit<HumidorEntry, 'id' | 'userId'>[] = [
-    { cigarName: 'Siglo VI', brand: 'Cohiba', quantity: 6, status: 'intact' },
-    { cigarName: 'Serie D No.4', brand: 'Partagás', quantity: 12, status: 'intact' },
-    { cigarName: 'No.2', brand: 'Montecristo', quantity: 3, status: 'smoking' },
-    { cigarName: 'Petit Edmundo', brand: 'Montecristo', quantity: 1, status: 'smoking' },
-    { cigarName: 'BHK 54', brand: 'Cohiba', quantity: 2, status: 'intact' },
-  ];
-
-  await Promise.all(
-    items.map((item) => addDoc(collection(db, COLLECTIONS.USERS, userId, 'humidor'), item)),
-  );
 }

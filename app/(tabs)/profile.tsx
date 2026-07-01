@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +16,6 @@ import { HierarchyBadge } from '@/components/ui/HierarchyBadge';
 import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher';
 import { withAlpha } from '@/lib/theme';
 import { useHumidor } from '@/hooks/useHumidor';
-import { seedCatalog, seedPosts, seedHumidor } from '@/lib/firestore';
 
 function StatItem({ label, value }: { label: string; value: number | string }) {
   const theme = useTheme();
@@ -34,33 +31,13 @@ export default function ProfileScreen() {
   const theme = useTheme();
   const signOut = useAuthStore((s) => s.signOut);
   const profile = useAuthStore((s) => s.profile);
-  const uid = useAuthStore((s) => s.uid);
   const { items: humidorItems } = useHumidor();
-  const [seeding, setSeeding] = useState(false);
 
   const cigarsInHumidor = humidorItems.reduce((s, i) => s + i.quantity, 0);
 
   const handleSignOut = () => {
     signOut();
     router.replace('/(auth)/login');
-  };
-
-  const handleSeed = async () => {
-    if (!uid) return;
-    setSeeding(true);
-    try {
-      const name = profile?.username ?? 'Aficionado';
-      await Promise.all([
-        seedCatalog(),
-        seedPosts(uid, name),
-        seedHumidor(uid),
-      ]);
-      Alert.alert('Seed concluído', 'Catálogo, posts e humidor populados com sucesso!');
-    } catch (e) {
-      Alert.alert('Erro', 'Falha ao popular o banco de dados.');
-    } finally {
-      setSeeding(false);
-    }
   };
 
   return (
@@ -153,29 +130,6 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           ))}
 
-          {/* Dev: Seed */}
-          <TouchableOpacity
-            onPress={handleSeed}
-            disabled={seeding}
-            style={[
-              styles.seedBtn,
-              {
-                backgroundColor: withAlpha(theme.accent, 0.12),
-                borderColor: withAlpha(theme.accent, 0.3),
-              },
-            ]}
-            activeOpacity={0.7}
-          >
-            {seeding ? (
-              <ActivityIndicator color={theme.accent} size="small" />
-            ) : (
-              <Ionicons name="leaf-outline" size={18} color={theme.accent} />
-            )}
-            <Text style={[styles.seedLabel, { color: theme.accent }]}>
-              {seeding ? 'Populando…' : 'Seed — Popular banco de dados'}
-            </Text>
-          </TouchableOpacity>
-
           <View style={{ height: 40 }} />
         </ScrollView>
       </SafeAreaView>
@@ -240,15 +194,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   menuLabel: { flex: 1, fontSize: 15, fontWeight: '500' },
-  seedBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 16,
-    marginTop: 8,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  seedLabel: { fontSize: 14, fontWeight: '600' },
 });

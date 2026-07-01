@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -15,7 +15,19 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// initializeFirestore (not getFirestore) so undefined optional fields (e.g.
+// photoUrl when no photo is picked) don't make addDoc/setDoc throw. Falls
+// back to getFirestore since initializeFirestore throws if called twice for
+// the same app (happens on web Fast Refresh).
+let firestoreDb;
+try {
+  firestoreDb = initializeFirestore(app, { ignoreUndefinedProperties: true });
+} catch {
+  firestoreDb = getFirestore(app);
+}
+export const db = firestoreDb;
+
 export const storage = getStorage(app);
 
 // ─── Firestore Collection Paths ───────────────────────────────────────────────
@@ -163,6 +175,7 @@ export interface HumidorEntry {
   cigarId?: string | null;
   // true quando o matching contra o catálogo local rodou e não achou nenhum candidato.
   unidentified?: boolean;
+  notes?: string;
   // AI enrichment — optional, populated when added via AI identification
   origin?: string;
   strength?: string;
