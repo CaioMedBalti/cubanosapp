@@ -3,6 +3,7 @@ import React, {
   useEffect,
   useRef,
   useCallback,
+  useMemo,
 } from 'react';
 import {
   Modal,
@@ -28,6 +29,9 @@ import { useAuthStore } from '@/store/authStore';
 import { addHumidorItem, batchAddHumidorItems } from '@/lib/firestore';
 import { identifyCigar, parseBulkText, identifyCigarImage } from '@/lib/ai';
 import { uploadUserCigarPhoto, getStockPhotoUrls } from '@/lib/photos';
+import { useCigarMatching } from '@/hooks/useCigarMatching';
+import { MatchConfirmationModal } from '@/components/modals/MatchConfirmationModal';
+import type { CigarCatalogEntry } from '@/lib/cigarImages';
 import type { CigarAIResult, BulkParseItem, HumidorEntry } from '@/lib/firebase';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -354,6 +358,7 @@ export function AddCigarModal({ visible, onClose }: Props) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const uid = useAuthStore((s) => s.uid);
+  const { match } = useCigarMatching();
 
   // Animation
   const slideAnim = useRef(new Animated.Value(700)).current;
@@ -387,6 +392,13 @@ export function AddCigarModal({ visible, onClose }: Props) {
   const [status, setStatus] = useState<HumidorEntry['status']>('intact');
   const [saving, setSaving] = useState(false);
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
+
+  // Fuzzy catalog match awaiting user confirmation before saving
+  const [pendingMatch, setPendingMatch] = useState<{
+    result: CigarAIResult;
+    candidate: CigarCatalogEntry;
+    confidence: number;
+  } | null>(null);
 
   // Single mode
   const [cigarName, setCigarName] = useState('');
@@ -431,10 +443,76 @@ export function AddCigarModal({ visible, onClose }: Props) {
         setScanPhase('idle');
         setScanResult(null);
         setScanError('');
+        setPendingMatch(null);
       }, 400);
       return () => clearTimeout(t);
     }
   }, [visible]);
+
+  // ─── Catalog matching ─────────────────────────────────────────────────────
+
+  const singleMatch = useMemo(
+    () => (singleResult ? match(singleResult.name, singleResult.brand) : null),
+    [singleResult, match],
+  );
+
+  const scanMatch = useMemo(
+    () => (scanResult ? match(scanResult.name, scanResult.brand) : null),
+    [scanResult, match],
+  );
+
+  const saveHumidorEntry = useCallback(
+    async (result: CigarAIResult, cigarId: string | null, unidentified: boolean) => {
+      if (!uid) return;
+      await addHumidorItem(uid, {
+        cigarName: result.name,
+        brand: result.brand,
+        quantity,
+        status,
+        origin: result.origin,
+        strength: result.strength,
+        flavorNotes: result.flavorNotes,
+        curiosities: result.curiosities,
+        history: result.history,
+        photoUrl: selectedPhotoUrl ?? undefined,
+        cigarId,
+        unidentified,
+      });
+    },
+    [uid, quantity, status, selectedPhotoUrl],
+  );
+
+  const handleConfirmMatch = async () => {
+    if (!pendingMatch) return;
+    setSaving(true);
+    try {
+      await saveHumidorEntry(pendingMatch.result, pendingMatch.candidate.key, false);
+      setPendingMatch(null);
+      handleClose();
+    } catch {
+      setPendingMatch(null);
+      setSingleError('Erro ao salvar. Tente novamente.');
+      setScanError('Erro ao salvar. Tente novamente.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRejectMatch = async () => {
+    if (!pendingMatch) return;
+    setSaving(true);
+    try {
+      await saveHumidorEntry(pendingMatch.result, null, true);
+      setPendingMatch(null);
+      handleClose();
+    } catch {
+      setPendingMatch(null);
+      setSingleError('Erro ao salvar. Tente novamente.');
+      setScanError('Erro ao salvar. Tente novamente.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // ─── Single Mode Handlers ─────────────────────────────────────────────────
 
@@ -456,19 +534,16 @@ export function AddCigarModal({ visible, onClose }: Props) {
     if (!singleResult || !uid) return;
     setSaving(true);
     try {
-      await addHumidorItem(uid, {
-        cigarName: singleResult.name,
-        brand: singleResult.brand,
-        quantity,
-        status,
-        origin: singleResult.origin,
-        strength: singleResult.strength,
-        flavorNotes: singleResult.flavorNotes,
-        curiosities: singleResult.curiosities,
-        history: singleResult.history,
-        photoUrl: selectedPhotoUrl ?? undefined,
-      });
-      handleClose();
+      const result = match(singleResult.name, singleResult.brand);
+      if (result.type === 'exact') {
+        await saveHumidorEntry(singleResult, result.entry.key, false);
+        handleClose();
+      } else if (result.type === 'fuzzy') {
+        setPendingMatch({ result: singleResult, candidate: result.entry, confidence: result.confidence });
+      } else {
+        await saveHumidorEntry(singleResult, null, true);
+        handleClose();
+      }
     } catch {
       setSingleError('Erro ao salvar. Tente novamente.');
     } finally {
@@ -496,12 +571,19 @@ export function AddCigarModal({ visible, onClose }: Props) {
     if (!uid || bulkItems.length === 0) return;
     setSaving(true);
     try {
-      await batchAddHumidorItems(uid, bulkItems.map((item) => ({
-        cigarName: item.cigarName,
-        brand: item.brand,
-        quantity: item.quantity,
-        status: item.status,
-      })));
+      // Import em lote só linka matches exatos, silenciosamente — sem modal de
+      // confirmação por item, para não pesar a revisão de uma lista inteira.
+      await batchAddHumidorItems(uid, bulkItems.map((item) => {
+        const result = match(item.cigarName, item.brand);
+        return {
+          cigarName: item.cigarName,
+          brand: item.brand,
+          quantity: item.quantity,
+          status: item.status,
+          cigarId: result.type === 'exact' ? result.entry.key : null,
+          unidentified: result.type !== 'exact',
+        };
+      }));
       handleClose();
     } catch {
       setBulkError('Erro ao salvar. Tente novamente.');
@@ -574,19 +656,16 @@ export function AddCigarModal({ visible, onClose }: Props) {
     if (!scanResult || !uid) return;
     setSaving(true);
     try {
-      await addHumidorItem(uid, {
-        cigarName: scanResult.name,
-        brand: scanResult.brand,
-        quantity,
-        status,
-        origin: scanResult.origin,
-        strength: scanResult.strength,
-        flavorNotes: scanResult.flavorNotes,
-        curiosities: scanResult.curiosities,
-        history: scanResult.history,
-        photoUrl: selectedPhotoUrl ?? undefined,
-      });
-      handleClose();
+      const result = match(scanResult.name, scanResult.brand);
+      if (result.type === 'exact') {
+        await saveHumidorEntry(scanResult, result.entry.key, false);
+        handleClose();
+      } else if (result.type === 'fuzzy') {
+        setPendingMatch({ result: scanResult, candidate: result.entry, confidence: result.confidence });
+      } else {
+        await saveHumidorEntry(scanResult, null, true);
+        handleClose();
+      }
     } catch {
       setScanError('Erro ao salvar. Tente novamente.');
     } finally {
@@ -599,6 +678,7 @@ export function AddCigarModal({ visible, onClose }: Props) {
   const sheetPaddingBottom = Math.max(insets.bottom, 16);
 
   return (
+    <>
     <Modal
       visible={visible}
       transparent
@@ -718,12 +798,18 @@ export function AddCigarModal({ visible, onClose }: Props) {
                       </Text>
                     </TouchableOpacity>
 
-                    {uid && (
-                      <PhotoPickerSection
-                        uid={uid}
-                        selectedPhotoUrl={selectedPhotoUrl}
-                        onPhotoSelected={setSelectedPhotoUrl}
-                      />
+                    {singleMatch?.type === 'exact' ? (
+                      <Text style={[styles.catalogMatchText, { color: theme.accent }]}>
+                        ✓ Imagem do catálogo encontrada
+                      </Text>
+                    ) : (
+                      uid && (
+                        <PhotoPickerSection
+                          uid={uid}
+                          selectedPhotoUrl={selectedPhotoUrl}
+                          onPhotoSelected={setSelectedPhotoUrl}
+                        />
+                      )
                     )}
 
                     <QuantityStepper value={quantity} onChange={setQuantity} />
@@ -955,12 +1041,18 @@ export function AddCigarModal({ visible, onClose }: Props) {
                       <>
                         <CigarPreviewCard result={scanResult} />
 
-                        {uid && (
-                          <PhotoPickerSection
-                            uid={uid}
-                            selectedPhotoUrl={selectedPhotoUrl}
-                            onPhotoSelected={setSelectedPhotoUrl}
-                          />
+                        {scanMatch?.type === 'exact' ? (
+                          <Text style={[styles.catalogMatchText, { color: theme.accent }]}>
+                            ✓ Imagem do catálogo encontrada
+                          </Text>
+                        ) : (
+                          uid && (
+                            <PhotoPickerSection
+                              uid={uid}
+                              selectedPhotoUrl={selectedPhotoUrl}
+                              onPhotoSelected={setSelectedPhotoUrl}
+                            />
+                          )
                         )}
 
                         <QuantityStepper value={quantity} onChange={setQuantity} />
@@ -994,6 +1086,16 @@ export function AddCigarModal({ visible, onClose }: Props) {
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
+
+    <MatchConfirmationModal
+      visible={pendingMatch !== null}
+      candidate={pendingMatch?.candidate ?? null}
+      confidence={pendingMatch?.confidence ?? 0}
+      onConfirm={handleConfirmMatch}
+      onReject={handleRejectMatch}
+      onAddWithoutCatalog={handleRejectMatch}
+    />
+    </>
   );
 }
 
@@ -1190,6 +1292,11 @@ const styles = StyleSheet.create({
   },
   statusPillText: {
     fontSize: 12,
+    fontWeight: '600',
+  },
+
+  catalogMatchText: {
+    fontSize: 13,
     fontWeight: '600',
   },
 

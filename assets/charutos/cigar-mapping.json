@@ -1,0 +1,510 @@
+{
+  "total": 50,
+  "processed": 54,
+  "unidentified": [],
+  "mapping": {
+    "Cohiba-Behike-52.png": {
+      "name": "Cohiba Behike 52",
+      "brand": "Cohiba",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Cohiba Behike 52.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Drew-Estate-Undercrown-Maduro.png": {
+      "name": "Drew Estate Undercrown Maduro",
+      "brand": "Drew Estate (Undercrown)",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_1muqki1muqki1muq.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Sancho-Panza-Belicoso.png": {
+      "name": "Sancho Panza Belicoso",
+      "brand": "Sancho Panza",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_4bj3oe4bj3oe4bj3.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Partagas-Lusitania.png": {
+      "name": "Partagás Lusitania",
+      "brand": "Partagás",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_5e9pbi5e9pbi5e9p.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Fonseca-Cosacos.png": {
+      "name": "Fonseca Cosacos",
+      "brand": "Fonseca",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_5kiwek5kiwek5kiw.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Crowned-Heads-Four-Kicudos.png": {
+      "name": "Crowned Heads Four Kicudos",
+      "brand": "Crowned Heads",
+      "origin": "Honduras/Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_6ddgyu6ddgyu6ddg.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Trinidad-Reyes.png": {
+      "name": "Trinidad Reyes",
+      "brand": "Trinidad",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_6rfp1r6rfp1r6rfp.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Cohiba-Siglo-VI.png": {
+      "name": "Cohiba Siglo VI",
+      "brand": "Cohiba",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_87aikm87aikm87ai.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Punch-Punch.png": {
+      "name": "Punch Punch",
+      "brand": "Punch",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_8re2q18re2q18re2.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Jose-L-Piedra-Petit-Cazadores.png": {
+      "name": "José L. Piedra Petit Cazadores",
+      "brand": "José L. Piedra",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_90mrub90mrub90mr.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Oliva-Serie-V-Melanio.png": {
+      "name": "Oliva Serie V Melanio",
+      "brand": "Oliva",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_9z3uf49z3uf49z3u (1).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Oliva-Serie-G.png": {
+      "name": "Oliva Serie G",
+      "brand": "Oliva",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_9z3uf49z3uf49z3u (2).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Ashton-VSG.png": {
+      "name": "Ashton VSG",
+      "brand": "Ashton",
+      "origin": "Dominican Republic",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_9z3uf49z3uf49z3u (3).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Ashton-ESG.png": {
+      "name": "Ashton ESG",
+      "brand": "Ashton",
+      "origin": "Dominican Republic",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_9z3uf49z3uf49z3u (4).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "My-Father-Flor-de-las-Antillas.png": {
+      "name": "My Father Flor de las Antillas",
+      "brand": "My Father",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_9z3uf49z3uf49z3u.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Ramon-Allones-Specially-Selected.png": {
+      "name": "Ramón Allones Specially Selected",
+      "brand": "Ramón Allones",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_ajbs50ajbs50ajbs.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Vegas-Robaina-Unicos.png": {
+      "name": "Vegas Robaina Unicos",
+      "brand": "Vegas Robaina",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_c089bec089bec089.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Plasencia-Alma-Fuerte.png": {
+      "name": "Plasencia Alma Fuerte",
+      "brand": "Plasencia",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_ej61bvej61bvej61.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Romeo-y-Julieta-Churchill.png": {
+      "name": "Romeo y Julieta Churchill",
+      "brand": "Romeo y Julieta",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_ejlmh2ejlmh2ejlm.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Plasencia-Alma-Fuerte-2.png": {
+      "name": "Plasencia Alma Fuerte",
+      "brand": "Plasencia",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_fmxyj9fmxyj9fmxy.png",
+      "status": "⚠ duplicate (bg removida)",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "El-Rey-del-Mundo-Choix-Supreme.png": {
+      "name": "El Rey del Mundo Choix Supreme",
+      "brand": "El Rey del Mundo",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_ij169tij169tij16.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Illusione-Epernay.png": {
+      "name": "Illusione Epernay",
+      "brand": "Illusione",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_j2vhk7j2vhk7j2vh.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Cohiba-Robusto.png": {
+      "name": "Cohiba Robusto",
+      "brand": "Cohiba",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_jcl4tyjcl4tyjcl4.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "H-Upmann-Magnum-46.png": {
+      "name": "H. Upmann Magnum 46",
+      "brand": "H. Upmann",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_jw5wr8jw5wr8jw5w.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "La-Gloria-Cubana-Medaille-DOr.png": {
+      "name": "La Gloria Cubana Medaille D'Or",
+      "brand": "La Gloria Cubana",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_m3gpelm3gpelm3gp.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Hoyo-de-Monterrey-Epicure-No2.png": {
+      "name": "Hoyo de Monterrey Epicure No. 2",
+      "brand": "Hoyo de Monterrey",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_mat5pqmat5pqmat5 (1).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Hoyo-de-Monterrey-Epicure-No2-2.png": {
+      "name": "Hoyo de Monterrey Epicure No. 2",
+      "brand": "Hoyo de Monterrey",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_mat5pqmat5pqmat5.png",
+      "status": "⚠ duplicate (bg removida)",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Romeo-y-Julieta-Wide-Churchill.png": {
+      "name": "Romeo y Julieta Wide Churchill",
+      "brand": "Romeo y Julieta",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_mxrx2bmxrx2bmxrx.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "San-Cristobal-El-Principe.png": {
+      "name": "San Cristóbal El Príncipe",
+      "brand": "San Cristóbal",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_o1dtdo1dtdo1dtdo.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Montecristo-No2.png": {
+      "name": "Montecristo No. 2",
+      "brand": "Montecristo",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_okkpfnokkpfnokkp.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Montecristo-Especial.png": {
+      "name": "Montecristo Especial",
+      "brand": "Montecristo",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_qf4q6xqf4q6xqf4q.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Bolivar-Royal-Corona.png": {
+      "name": "Bolívar Royal Corona",
+      "brand": "Bolívar",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_qkmpwiqkmpwiqkmp.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Davidoff-Nicaragua-Box-Pressed.png": {
+      "name": "Davidoff Nicaragua Box-Pressed",
+      "brand": "Davidoff",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_ro1fmsro1fmsro1f (1).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Rocky-Patel-Decade.png": {
+      "name": "Rocky Patel Decade",
+      "brand": "Rocky Patel",
+      "origin": "Honduras",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_ro1fmsro1fmsro1f (2).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Perdomo-20th-Anniversary.png": {
+      "name": "Perdomo 20th Anniversary",
+      "brand": "Perdomo",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_ro1fmsro1fmsro1f (3).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Liga-Privada-No9.png": {
+      "name": "Liga Privada No. 9",
+      "brand": "Drew Estate (Liga Privada)",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_ro1fmsro1fmsro1f (4).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Davidoff-Winston-Churchill.png": {
+      "name": "Davidoff Winston Churchill",
+      "brand": "Davidoff",
+      "origin": "Dominican Republic",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_ro1fmsro1fmsro1f.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Partagas-Serie-D-No4.png": {
+      "name": "Partagás Serie D No. 4",
+      "brand": "Partagás",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_s0kkgos0kkgos0kk.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Quai-dOrsay-Robusto.png": {
+      "name": "Quai d'Orsay Robusto",
+      "brand": "Quai d'Orsay",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_s6as98s6as98s6as.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Trinidad-Vigia.png": {
+      "name": "Trinidad Vigia",
+      "brand": "Trinidad",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_umyyclumyyclumyy.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Undercrown-Shade.png": {
+      "name": "Undercrown Shade",
+      "brand": "Drew Estate (Undercrown)",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_v6hg4kv6hg4kv6hg1.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Camacho-Triple-Maduro.png": {
+      "name": "Camacho Triple Maduro",
+      "brand": "Camacho",
+      "origin": "Honduras",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_v6hg4kv6hg4kv6hg2.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "EP-Carrillo-Encore-Majestic.png": {
+      "name": "E.P. Carrillo Encore Majestic",
+      "brand": "E.P. Carrillo",
+      "origin": "Dominican Republic",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_v6hg4kv6hg4kv6hg3.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Alec-Bradley-Prensado.png": {
+      "name": "Alec Bradley Prensado",
+      "brand": "Alec Bradley",
+      "origin": "Honduras",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_v6hg4kv6hg4kv6hg4.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Foundation-Charter-Oak.png": {
+      "name": "Foundation Charter Oak",
+      "brand": "Foundation",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_v6hg4kv6hg4kv6hg5.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Drew-Estate-Undercrown-Maduro-2.png": {
+      "name": "Drew Estate Undercrown Maduro",
+      "brand": "Drew Estate (Undercrown)",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_waehs5waehs5waeh.png",
+      "status": "⚠ duplicate (bg removida)",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Diplomaticos-No2.png": {
+      "name": "Diplomáticos No. 2",
+      "brand": "Diplomáticos",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_wgai3owgai3owgai.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Cohiba-Robusto-2.png": {
+      "name": "Cohiba Robusto",
+      "brand": "Cohiba",
+      "origin": "Cuba",
+      "category": "cuban",
+      "source_file": "Gemini_Generated_Image_xzl3j3xzl3j3xzl3.png",
+      "status": "⚠ duplicate (bg removida)",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Padron-Family-Reserve-45.png": {
+      "name": "Padrón Family Reserve 45",
+      "brand": "Padrón",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_yg52epyg52epyg52 (1).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Arturo-Fuente-Opus-X.png": {
+      "name": "Arturo Fuente Opus X",
+      "brand": "Arturo Fuente",
+      "origin": "Dominican Republic",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_yg52epyg52epyg52 (2).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Arturo-Fuente-Hemingway-Signature.png": {
+      "name": "Arturo Fuente Hemingway Signature",
+      "brand": "Arturo Fuente",
+      "origin": "Dominican Republic",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_yg52epyg52epyg52 (3).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "My-Father-Le-Bijou-1922.png": {
+      "name": "My Father Le Bijou 1922",
+      "brand": "My Father",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_yg52epyg52epyg52 (4).png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "Padron-1926-Serie-No9.png": {
+      "name": "Padrón 1926 Serie No. 9",
+      "brand": "Padrón",
+      "origin": "Nicaragua",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_yg52epyg52epyg52.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    },
+    "La-Aurora-1495.png": {
+      "name": "La Aurora 1495",
+      "brand": "La Aurora",
+      "origin": "Dominican Republic",
+      "category": "non-cuban",
+      "source_file": "Gemini_Generated_Image_zgv5y4zgv5y4zgv5.png",
+      "status": "✓ bg removida",
+      "background": "transparente real (alpha canal processado)"
+    }
+  },
+  "quality_issues": [
+    {
+      "note": "Fundo removido programaticamente (deteccao adaptativa do padrao xadrez + flood-fill a partir da borda). Todas as 54 imagens agora tem canal alpha real."
+    },
+    {
+      "note": "Pequenos artefatos residuais (brilhos/sparkles de 1-3px) permanecem em ~6 imagens (ex: Oliva-Serie-V-Melanio, Ashton-ESG, Alec-Bradley-Prensado) -- resíduos do proprio gerador de imagem, nao do processo de remocao de fundo. Cosmeticamente irrelevantes no tamanho de uso do app."
+    },
+    {
+      "note": "Trinidad Reyes (#7) e Trinidad Vigia (#40) tem bandas quase identicas -- diferenciacao por tamanho foi uma estimativa; confirmar manualmente."
+    },
+    {
+      "note": "Partagas Lusitania (#4): o texto da vitola saiu distorcido do gerador ('ANBILHA'); identificado pelo formato + marca."
+    },
+    {
+      "note": "4 duplicatas visuais mantidas com sufixo '-2': Plasencia-Alma-Fuerte, Hoyo-de-Monterrey-Epicure-No2, Drew-Estate-Undercrown-Maduro, Cohiba-Robusto."
+    }
+  ]
+}

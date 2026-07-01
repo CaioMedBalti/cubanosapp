@@ -20,6 +20,12 @@ import { useHumidor } from '@/hooks/useHumidor';
 import { HumidorEntry } from '@/lib/firebase';
 import { AddCigarModal } from '@/components/modals/AddCigarModal';
 import { CigarDetailSheet } from '@/components/modals/CigarDetailSheet';
+import { getCigarImage } from '@/lib/images';
+import { GenericCigarPlaceholder } from '@/components/ui/GenericCigarPlaceholder';
+import { ViewModeSwitcher } from '@/components/ui/ViewModeSwitcher';
+import { HumidorListRow } from '@/components/ui/HumidorListRow';
+import { HumidorShelf } from '@/components/ui/HumidorShelf';
+import { useHumidorViewStore } from '@/store/humidorStore';
 
 const STATUS_LABEL: Record<HumidorEntry['status'], string> = {
   intact: 'Intacto',
@@ -35,6 +41,7 @@ const STATUS_COLOR: Record<HumidorEntry['status'], string> = {
 
 function HumidorCard({ item, onPress }: { item: HumidorEntry; onPress: () => void }) {
   const theme = useTheme();
+  const cigarImage = getCigarImage(item);
   return (
     <TouchableOpacity
       style={[
@@ -48,16 +55,22 @@ function HumidorCard({ item, onPress }: { item: HumidorEntry; onPress: () => voi
       onPress={onPress}
       activeOpacity={0.8}
     >
-      {item.photoUrl ? (
-        <View style={styles.cardImageWrapper}>
-          <Image source={{ uri: item.photoUrl }} style={styles.cardImage} />
+      {cigarImage ? (
+        <View
+          style={[styles.cardImageWrapper, { backgroundColor: withAlpha(theme.accent, 0.08) }]}
+        >
+          <Image
+            source={cigarImage.source}
+            style={styles.cardImage}
+            resizeMode={cigarImage.isCatalogImage ? 'contain' : 'cover'}
+          />
           <View style={[styles.cardQtyBadge, { backgroundColor: withAlpha('#000', 0.55) }]}>
             <Text style={[styles.cardQtyText, { color: theme.accent }]}>{item.quantity}x</Text>
           </View>
         </View>
       ) : (
         <View style={[styles.cardThumb, { backgroundColor: withAlpha(theme.accent, 0.1) }]}>
-          <Text style={styles.thumbEmoji}>🍃</Text>
+          <GenericCigarPlaceholder size={28} />
           <Text style={[styles.thumbQty, { color: theme.accent }]}>{item.quantity}x</Text>
         </View>
       )}
@@ -90,6 +103,7 @@ export default function HumidorScreen() {
   const { items, loading } = useHumidor();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<HumidorEntry | null>(null);
+  const viewMode = useHumidorViewStore((s) => s.viewMode);
 
   const total = items.reduce((s, i) => s + i.quantity, 0);
 
@@ -105,12 +119,15 @@ export default function HumidorScreen() {
     <VideoBackground style={styles.container}>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={[styles.header, { borderBottomColor: withAlpha(theme.border, 0.25) }]}>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Humidor</Text>
-          {!loading && (
-            <Text style={[styles.headerCount, { color: theme.textMuted }]}>
-              {total} charuto{total !== 1 ? 's' : ''}
-            </Text>
-          )}
+          <View style={styles.headerTitleRow}>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Humidor</Text>
+            {!loading && (
+              <Text style={[styles.headerCount, { color: theme.textMuted }]}>
+                {total} charuto{total !== 1 ? 's' : ''}
+              </Text>
+            )}
+          </View>
+          <ViewModeSwitcher />
         </View>
 
         {loading ? (
@@ -125,6 +142,22 @@ export default function HumidorScreen() {
               Toque em + para adicionar seu primeiro charuto.
             </Text>
           </View>
+        ) : viewMode === 'shelf' ? (
+          <HumidorShelf
+            items={items}
+            onPressItem={setSelectedItem}
+            contentContainerStyle={[styles.list, { paddingBottom: listPaddingBottom }]}
+          />
+        ) : viewMode === 'list' ? (
+          <FlatList
+            data={items}
+            renderItem={({ item }) => (
+              <HumidorListRow item={item} onPress={() => setSelectedItem(item)} />
+            )}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={[styles.list, { paddingBottom: listPaddingBottom }]}
+            showsVerticalScrollIndicator={false}
+          />
         ) : (
           <FlatList
             data={items}
@@ -168,6 +201,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
     alignItems: 'baseline',
     gap: 10,
   },
@@ -206,7 +244,6 @@ const styles = StyleSheet.create({
   cardImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   cardQtyBadge: {
     position: 'absolute',
@@ -220,7 +257,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
-  thumbEmoji: { fontSize: 28 },
   thumbQty: { fontSize: 13, fontWeight: '800' },
   cardBrand: { fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   cardName: { fontSize: 14, fontWeight: '600' },

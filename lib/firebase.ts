@@ -158,7 +158,11 @@ export interface HumidorEntry {
   brand: string;
   quantity: number;
   status: 'intact' | 'smoking' | 'finished';
+  // Chave do catálogo local de imagens (lib/cigarImages.ts / assets/charutos/cigar-mapping.json),
+  // ex: "Cohiba-Siglo-VI.png" — não é um doc id do Firestore.
   cigarId?: string | null;
+  // true quando o matching contra o catálogo local rodou e não achou nenhum candidato.
+  unidentified?: boolean;
   // AI enrichment — optional, populated when added via AI identification
   origin?: string;
   strength?: string;

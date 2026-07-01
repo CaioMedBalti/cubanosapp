@@ -17,6 +17,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/themeStore';
 import { withAlpha } from '@/lib/theme';
+import { getCigarImage } from '@/lib/images';
+import { GenericCigarPlaceholder } from '@/components/ui/GenericCigarPlaceholder';
+import { getStrengthBucket, STRENGTH_GRADIENTS, NEUTRAL_GRADIENT } from '@/constants/strength';
 import type { HumidorEntry } from '@/lib/firebase';
 
 const STATUS_LABEL: Record<HumidorEntry['status'], string> = {
@@ -65,6 +68,10 @@ export function CigarDetailSheet({ item, onClose }: Props) {
   if (!item) return null;
 
   const sheetPaddingBottom = Math.max(insets.bottom, 16);
+  const cigarImage = getCigarImage(item);
+  const gradientColors = item.unidentified
+    ? NEUTRAL_GRADIENT
+    : STRENGTH_GRADIENTS[getStrengthBucket(item.strength)];
 
   return (
     <Modal
@@ -93,18 +100,28 @@ export function CigarDetailSheet({ item, onClose }: Props) {
           {/* Handle */}
           <View style={[styles.handle, { backgroundColor: withAlpha(theme.border, 0.5) }]} />
 
-          {/* Hero image or gradient */}
+          {/* Hero: gradiente por força sempre no fundo; imagem do catálogo (PNG
+              transparente) compõe por cima, foto do usuário cobre o card inteiro,
+              ou ícone genérico quando não há nenhuma imagem. */}
           <View style={styles.heroWrapper}>
-            {item.photoUrl ? (
-              <Image source={{ uri: item.photoUrl }} style={styles.heroImage} />
+            {cigarImage && !cigarImage.isCatalogImage ? (
+              <Image source={cigarImage.source} style={styles.heroImage} />
             ) : (
               <LinearGradient
-                colors={[withAlpha(theme.accent, 0.25), withAlpha(theme.accent, 0.05)]}
+                colors={gradientColors}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.heroGradient}
               >
-                <Text style={styles.heroEmoji}>🍃</Text>
+                {cigarImage?.isCatalogImage ? (
+                  <Image
+                    source={cigarImage.source}
+                    style={styles.heroImageContain}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <GenericCigarPlaceholder size={64} color="#fff" />
+                )}
               </LinearGradient>
             )}
             {/* Close button overlay */}
@@ -245,8 +262,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroEmoji: {
-    fontSize: 60,
+  heroImageContain: {
+    width: '70%',
+    height: '80%',
   },
   closeBtn: {
     position: 'absolute',
