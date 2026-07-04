@@ -95,6 +95,10 @@ export interface Tasting {
   userId: string;
   cigarId: string | null;
   whiskyId: string | null;
+  // Denormalized at write time so the tastings list can render without a
+  // join against the catalog collections.
+  itemName?: string;
+  itemBrand?: string;
   rating: 1 | 2 | 3 | 4 | 5;
   notes: string | null;
   flavorNotes: string[];
@@ -123,6 +127,7 @@ export interface Comment {
 export interface Follow {
   followerId: string;
   followingId: string;
+  createdAt?: string;
 }
 
 // ─── Denormalized types for MVP UI ───────────────────────────────────────────

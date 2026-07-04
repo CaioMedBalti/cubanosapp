@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
-    "openai": "^4.80.0",
     "@expo/metro-runtime": "^56.0.15",
     "@expo/vector-icons": "^15.0.2",
     "@shopify/react-native-skia": "2.6.2",
@@ -18,6 +17,7 @@
     "expo-video": "~56.1.4",
     "firebase": "^12.15.0",
     "nativewind": "^4.2.6",
+    "openai": "^4.80.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
@@ -33,6 +33,7 @@
     "@types/react": "~19.2.2",
     "@vercel/node": "^5.0.0",
     "babel-preset-expo": "^56.0.15",
+    "firebase-admin": "^14.1.0",
     "typescript": "~6.0.3"
   },
   "scripts": {

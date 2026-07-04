@@ -125,7 +125,7 @@ export default function DiscoverScreen() {
             </Text>
             {!query && (
               <Text style={[styles.emptyHint, { color: theme.textMuted }]}>
-                Use o botão Seed no Perfil para adicionar produtos ao catálogo.
+                O catálogo ainda não tem produtos cadastrados.
               </Text>
             )}
           </View>

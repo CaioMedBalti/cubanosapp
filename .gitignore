@@ -35,6 +35,10 @@ yarn-error.*
 .env.*
 .env*.local
 
+# Firebase service-account keys (used only by scripts/reset-example-data.js, never committed)
+service-account*.json
+*serviceAccountKey*.json
+
 # typescript
 *.tsbuildinfo
 

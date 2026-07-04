@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +17,7 @@ import { auth, db, COLLECTIONS } from '@/lib/firebase';
 import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/store/themeStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
+import { ThemedButton } from '@/components/ui/ThemedButton';
 import { withAlpha } from '@/lib/theme';
 
 export default function RegisterScreen() {
@@ -128,17 +128,7 @@ export default function RegisterScreen() {
                 />
               </View>
 
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: theme.accent }, loading && styles.buttonDisabled]}
-                onPress={handleRegister}
-                activeOpacity={0.8}
-                disabled={loading}
-              >
-                {loading
-                  ? <ActivityIndicator color="#000" />
-                  : <Text style={styles.buttonText}>Criar Conta</Text>
-                }
-              </TouchableOpacity>
+              <ThemedButton label="Criar Conta" onPress={handleRegister} loading={loading} style={{ marginTop: 4 }} />
 
               <TouchableOpacity onPress={() => router.back()} style={styles.linkRow}>
                 <Text style={[styles.link, { color: theme.textMuted }]}>
@@ -168,9 +158,6 @@ const styles = StyleSheet.create({
   fieldGroup: { gap: 6 },
   fieldLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 0.5 },
   input: { height: 48, borderRadius: 10, borderWidth: 1, paddingHorizontal: 14, fontSize: 15 },
-  button: { height: 50, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#000', fontWeight: '700', fontSize: 16 },
   linkRow: { alignItems: 'center', marginTop: 4 },
   link: { fontSize: 14 },
 });

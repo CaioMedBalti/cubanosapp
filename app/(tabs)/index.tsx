@@ -44,7 +44,7 @@ export default function FeedScreen() {
             <Text style={[styles.emptyIcon, { color: withAlpha(theme.accent, 0.4) }]}>🍃</Text>
             <Text style={[styles.emptyTitle, { color: theme.text }]}>Nenhum post ainda</Text>
             <Text style={[styles.emptyHint, { color: theme.textMuted }]}>
-              Use o botão Seed no Perfil para adicionar dados de exemplo.
+              Registre uma degustação pública ou siga outros colecionadores para ver posts aqui.
             </Text>
           </View>
         ) : (

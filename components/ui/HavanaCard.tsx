@@ -8,7 +8,7 @@ import {
   ViewStyle,
   ImageSourcePropType,
 } from 'react-native';
-import { useTheme } from '@/store/themeStore';
+import { useTheme, useActiveTheme } from '@/store/themeStore';
 import { withAlpha } from '@/lib/theme';
 
 interface CubanosCardProps {
@@ -41,7 +41,15 @@ export function CubanosCard({
   children,
 }: CubanosCardProps) {
   const theme = useTheme();
+  const activeTheme = useActiveTheme();
   const resolvedImage = image ?? (imageUrl ? { uri: imageUrl } : null);
+
+  const themedShadow =
+    activeTheme === 'dark-luxury'
+      ? { shadowColor: theme.accent, shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } }
+      : activeTheme === 'vintage'
+        ? { shadowColor: theme.text, shadowOpacity: 0.14, shadowRadius: 6, shadowOffset: { width: 2, height: 3 } }
+        : { shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 3, shadowOffset: { width: 0, height: 2 } };
 
   return (
     <TouchableOpacity
@@ -51,7 +59,9 @@ export function CubanosCard({
         styles.card,
         {
           backgroundColor: theme.card,
-          borderColor: withAlpha(theme.border, 0.6),
+          borderColor: withAlpha(theme.border, activeTheme === 'modern' ? 0.8 : 0.6),
+          elevation: 3,
+          ...themedShadow,
         },
         style,
       ]}

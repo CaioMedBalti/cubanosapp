@@ -1,12 +1,17 @@
 import {
   collection,
   query,
+  where,
   orderBy,
   limit,
   onSnapshot,
   getDocs,
+  getDoc,
   addDoc,
+  setDoc,
+  updateDoc,
   deleteDoc,
+  doc,
   serverTimestamp,
   CollectionReference,
   Unsubscribe,
@@ -18,22 +23,71 @@ import {
   CigarCatalog,
   WhiskyCatalog,
   HumidorEntry,
+  UserProfile,
+  Tasting,
 } from './firebase';
 
-// ─── Posts ────────────────────────────────────────────────────────────────────
+// ─── Feed (following-based) ────────────────────────────────────────────────────
+// Firestore has no JOINs, so a "posts from people I follow" feed is built in
+// two steps: get the follow graph, then fetch posts for those authors. The
+// `in` operator caps at 10 values, so ids are chunked and merged client-side.
 
-export function subscribePosts(
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+export function subscribeFollowingFeed(
+  idsToQuery: string[],
   callback: (posts: FeedPost[]) => void,
   limitN = 30,
 ): Unsubscribe {
-  const q = query(
-    collection(db, COLLECTIONS.POSTS),
-    orderBy('createdAt', 'desc'),
-    limit(limitN),
-  );
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as FeedPost));
+  if (idsToQuery.length === 0) {
+    callback([]);
+    return () => {};
+  }
+
+  const chunks = chunk(idsToQuery, 10);
+  const resultsByChunk = new Map<number, FeedPost[]>();
+
+  const emit = () => {
+    const merged = new Map<string, FeedPost>();
+    for (const posts of resultsByChunk.values()) {
+      for (const p of posts) merged.set(p.id, p);
+    }
+    const sorted = Array.from(merged.values()).sort((a, b) => {
+      const aMs = a.createdAt?.toMillis?.() ?? 0;
+      const bMs = b.createdAt?.toMillis?.() ?? 0;
+      return bMs - aMs;
+    });
+    callback(sorted.slice(0, limitN));
+  };
+
+  const unsubs = chunks.map((ids, i) => {
+    const q = query(
+      collection(db, COLLECTIONS.POSTS),
+      where('userId', 'in', ids),
+      orderBy('createdAt', 'desc'),
+      limit(limitN),
+    );
+    return onSnapshot(
+      q,
+      (snap) => {
+        resultsByChunk.set(i, snap.docs.map((d) => ({ id: d.id, ...d.data() }) as FeedPost));
+        emit();
+      },
+      (err) => {
+        // Most commonly a missing composite index on first run — surface an
+        // empty feed instead of leaving callers stuck on a loading spinner.
+        console.error('subscribeFollowingFeed error:', err);
+        resultsByChunk.set(i, []);
+        emit();
+      },
+    );
   });
+
+  return () => unsubs.forEach((u) => u());
 }
 
 // ─── Catalog ─────────────────────────────────────────────────────────────────
@@ -134,4 +188,219 @@ export async function resetExampleData(userId: string, authorName: string): Prom
     ...humidorItems.map((item) => addDoc(collection(db, COLLECTIONS.USERS, userId, 'humidor'), item)),
     ...posts.map((p) => addDoc(collection(db, COLLECTIONS.POSTS), p)),
   ]);
+}
+
+// ─── Profile ─────────────────────────────────────────────────────────────────
+
+export async function updateUserProfile(
+  uid: string,
+  updates: Partial<Pick<UserProfile, 'username' | 'bio'>>,
+): Promise<void> {
+  await updateDoc(doc(db, COLLECTIONS.USERS, uid), updates);
+}
+
+export function subscribeTastingCount(
+  userId: string,
+  callback: (count: number) => void,
+): Unsubscribe {
+  const q = query(collection(db, COLLECTIONS.TASTINGS), where('userId', '==', userId));
+  return onSnapshot(
+    q,
+    (snap) => callback(snap.size),
+    (err) => {
+      console.error('subscribeTastingCount error:', err);
+      callback(0);
+    },
+  );
+}
+
+export function subscribeFollowCounts(
+  userId: string,
+  callback: (counts: { followers: number; following: number }) => void,
+): Unsubscribe {
+  let followers = 0;
+  let following = 0;
+  const onError = (err: unknown) => console.error('subscribeFollowCounts error:', err);
+  const unsubFollowers = onSnapshot(
+    query(collection(db, COLLECTIONS.FOLLOWS), where('followingId', '==', userId)),
+    (snap) => {
+      followers = snap.size;
+      callback({ followers, following });
+    },
+    onError,
+  );
+  const unsubFollowing = onSnapshot(
+    query(collection(db, COLLECTIONS.FOLLOWS), where('followerId', '==', userId)),
+    (snap) => {
+      following = snap.size;
+      callback({ followers, following });
+    },
+    onError,
+  );
+  return () => {
+    unsubFollowers();
+    unsubFollowing();
+  };
+}
+
+// ─── Tastings ────────────────────────────────────────────────────────────────
+
+export function subscribeUserTastings(
+  userId: string,
+  callback: (tastings: Tasting[]) => void,
+): Unsubscribe {
+  const q = query(
+    collection(db, COLLECTIONS.TASTINGS),
+    where('userId', '==', userId),
+    orderBy('date', 'desc'),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Tasting));
+    },
+    (err) => {
+      console.error('subscribeUserTastings error:', err);
+      callback([]);
+    },
+  );
+}
+
+// Public-only variant for viewing another user's profile — no orderBy, so it
+// doesn't need a second composite index; sort client-side instead.
+export function subscribePublicTastings(
+  userId: string,
+  callback: (tastings: Tasting[]) => void,
+): Unsubscribe {
+  const q = query(
+    collection(db, COLLECTIONS.TASTINGS),
+    where('userId', '==', userId),
+    where('isPublic', '==', true),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const tastings = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Tasting);
+      tastings.sort((a, b) => (a.date < b.date ? 1 : -1));
+      callback(tastings);
+    },
+    (err) => {
+      console.error('subscribePublicTastings error:', err);
+      callback([]);
+    },
+  );
+}
+
+export interface LogTastingInput {
+  userId: string;
+  cigarId?: string | null;
+  whiskyId?: string | null;
+  itemName?: string;
+  itemBrand?: string;
+  authorName: string;
+  avatarUrl?: string | null;
+  rating: 1 | 2 | 3 | 4 | 5;
+  notes?: string | null;
+  flavorNotes?: string[];
+  isPublic: boolean;
+}
+
+export async function logTasting(
+  input: LogTastingInput,
+): Promise<{ tastingId: string; postId: string | null }> {
+  const tasting: Omit<Tasting, 'id'> = {
+    userId: input.userId,
+    cigarId: input.cigarId ?? null,
+    whiskyId: input.whiskyId ?? null,
+    itemName: input.itemName,
+    itemBrand: input.itemBrand,
+    rating: input.rating,
+    notes: input.notes ?? null,
+    flavorNotes: input.flavorNotes ?? [],
+    date: new Date().toISOString(),
+    isPublic: input.isPublic,
+  };
+
+  const [tastingRef, postRef] = await Promise.all([
+    addDoc(collection(db, COLLECTIONS.TASTINGS), tasting),
+    input.isPublic
+      ? addDoc(collection(db, COLLECTIONS.POSTS), {
+          userId: input.userId,
+          authorName: input.authorName,
+          avatarUrl: input.avatarUrl ?? null,
+          caption: input.notes ?? '',
+          cigarName: input.cigarId ? input.itemName : undefined,
+          whiskyName: input.whiskyId ? input.itemName : undefined,
+          rating: input.rating,
+          likesCount: 0,
+          commentsCount: 0,
+          createdAt: serverTimestamp(),
+        } as Omit<FeedPost, 'id'>)
+      : Promise.resolve(null),
+  ]);
+
+  return { tastingId: tastingRef.id, postId: postRef?.id ?? null };
+}
+
+// ─── Follows ─────────────────────────────────────────────────────────────────
+// Deterministic doc id (`${followerId}_${followingId}`) instead of a
+// query-then-write pattern — avoids a duplicate-follow race and an extra read.
+
+function followDocId(followerId: string, followingId: string): string {
+  return `${followerId}_${followingId}`;
+}
+
+export async function followUser(followerId: string, followingId: string): Promise<void> {
+  await setDoc(doc(db, COLLECTIONS.FOLLOWS, followDocId(followerId, followingId)), {
+    followerId,
+    followingId,
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function unfollowUser(followerId: string, followingId: string): Promise<void> {
+  await deleteDoc(doc(db, COLLECTIONS.FOLLOWS, followDocId(followerId, followingId)));
+}
+
+export function subscribeIsFollowing(
+  followerId: string,
+  followingId: string,
+  callback: (isFollowing: boolean) => void,
+): Unsubscribe {
+  return onSnapshot(
+    doc(db, COLLECTIONS.FOLLOWS, followDocId(followerId, followingId)),
+    (snap) => callback(snap.exists()),
+    (err) => {
+      console.error('subscribeIsFollowing error:', err);
+      callback(false);
+    },
+  );
+}
+
+export function subscribeFollowingIds(
+  userId: string,
+  callback: (ids: string[]) => void,
+): Unsubscribe {
+  const q = query(collection(db, COLLECTIONS.FOLLOWS), where('followerId', '==', userId));
+  return onSnapshot(
+    q,
+    (snap) => callback(snap.docs.map((d) => d.data().followingId as string)),
+    (err) => {
+      console.error('subscribeFollowingIds error:', err);
+      callback([]);
+    },
+  );
+}
+
+export async function findUserByUsername(username: string): Promise<UserProfile | null> {
+  const q = query(collection(db, COLLECTIONS.USERS), where('username', '==', username), limit(1));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  return { uid: d.id, ...d.data() } as UserProfile;
+}
+
+export async function getUserProfile(uid: string): Promise<UserProfile | null> {
+  const snap = await getDoc(doc(db, COLLECTIONS.USERS, uid));
+  return snap.exists() ? ({ uid: snap.id, ...snap.data() } as UserProfile) : null;
 }

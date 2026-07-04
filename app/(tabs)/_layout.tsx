@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/store/themeStore';
+import { useTheme, useActiveTheme } from '@/store/themeStore';
 import { withAlpha } from '@/lib/theme';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +24,7 @@ const TABS: TabConfig[] = [
 
 export default function TabsLayout() {
   const theme = useTheme();
+  const activeTheme = useActiveTheme();
   const insets = useSafeAreaInsets();
 
   // On web accessed from iPhone, Platform.OS === 'web' so the ios check would
@@ -31,17 +32,27 @@ export default function TabsLayout() {
   const bottomPad = insets.bottom > 0 ? insets.bottom : Platform.OS === 'ios' ? 20 : 8;
   const tabHeight = insets.bottom > 0 ? 60 + insets.bottom : Platform.OS === 'ios' ? 84 : 64;
 
+  const themedShadow =
+    activeTheme === 'dark-luxury'
+      ? { shadowColor: theme.accent, shadowOpacity: 0.25, shadowRadius: 10 }
+      : activeTheme === 'vintage'
+        ? { shadowColor: theme.text, shadowOpacity: 0.1, shadowRadius: 6 }
+        : { shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4 };
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
           backgroundColor: theme.surface,
-          borderTopColor: withAlpha(theme.accent, 0.3),
+          borderTopColor: withAlpha(theme.accent, activeTheme === 'modern' ? 0.5 : 0.3),
           borderTopWidth: 1,
           paddingBottom: bottomPad,
           paddingTop: 8,
           height: tabHeight,
+          shadowOffset: { width: 0, height: -2 },
+          elevation: 8,
+          ...themedShadow,
         },
         tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.textMuted,

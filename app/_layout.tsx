@@ -4,8 +4,9 @@ import { View, StatusBar, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
-import { useTheme } from '@/store/themeStore';
+import { useActiveTheme, useTheme } from '@/store/themeStore';
 import { THEMES, DEFAULT_THEME } from '@/constants/themes';
+import { useAuthListener } from '@/hooks/useAuthListener';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -47,6 +48,8 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 
 function RootLayoutNav() {
   const theme = useTheme();
+  const activeTheme = useActiveTheme();
+  useAuthListener();
 
   useEffect(() => {
     SplashScreen.hideAsync();
@@ -54,7 +57,11 @@ function RootLayoutNav() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle={activeTheme === 'vintage' ? 'dark-content' : 'light-content'}
+        backgroundColor="transparent"
+        translucent
+      />
       <Stack screenOptions={{ headerShown: false }} />
     </View>
   );

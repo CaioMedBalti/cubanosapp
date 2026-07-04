@@ -13,9 +13,9 @@ import { useTheme } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { HierarchyBadge } from '@/components/ui/HierarchyBadge';
-import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher';
 import { withAlpha } from '@/lib/theme';
 import { useHumidor } from '@/hooks/useHumidor';
+import { useProfileStats } from '@/hooks/useProfileStats';
 
 function StatItem({ label, value }: { label: string; value: number | string }) {
   const theme = useTheme();
@@ -29,16 +29,12 @@ function StatItem({ label, value }: { label: string; value: number | string }) {
 
 export default function ProfileScreen() {
   const theme = useTheme();
-  const signOut = useAuthStore((s) => s.signOut);
   const profile = useAuthStore((s) => s.profile);
+  const uid = useAuthStore((s) => s.uid);
   const { items: humidorItems } = useHumidor();
+  const { tastingCount, followers, following } = useProfileStats(uid);
 
   const cigarsInHumidor = humidorItems.reduce((s, i) => s + i.quantity, 0);
-
-  const handleSignOut = () => {
-    signOut();
-    router.replace('/(auth)/login');
-  };
 
   return (
     <VideoBackground style={styles.container}>
@@ -47,8 +43,8 @@ export default function ProfileScreen() {
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: withAlpha(theme.border, 0.25) }]}>
             <Text style={[styles.headerTitle, { color: theme.text }]}>Perfil</Text>
-            <TouchableOpacity onPress={handleSignOut}>
-              <Ionicons name="log-out-outline" size={22} color={theme.textMuted} />
+            <TouchableOpacity onPress={() => router.push('/search')}>
+              <Ionicons name="person-add-outline" size={22} color={theme.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -71,7 +67,7 @@ export default function ProfileScreen() {
             <Text style={[styles.bio, { color: theme.textMuted }]}>
               {profile?.bio ?? 'Explorador de charutos e whiskies premium'}
             </Text>
-            <HierarchyBadge tastingCount={0} size="lg" />
+            <HierarchyBadge tastingCount={tastingCount} size="lg" />
           </View>
 
           {/* Stats */}
@@ -85,33 +81,20 @@ export default function ProfileScreen() {
               },
             ]}
           >
-            <StatItem label="Degustações" value={0} />
+            <StatItem label="Degustações" value={tastingCount} />
             <View style={[styles.statDivider, { backgroundColor: withAlpha(theme.border, 0.4) }]} />
             <StatItem label="Humidor" value={cigarsInHumidor} />
             <View style={[styles.statDivider, { backgroundColor: withAlpha(theme.border, 0.4) }]} />
-            <StatItem label="Seguidores" value={0} />
+            <StatItem label="Seguidores" value={followers} />
             <View style={[styles.statDivider, { backgroundColor: withAlpha(theme.border, 0.4) }]} />
-            <StatItem label="Seguindo" value={0} />
-          </View>
-
-          {/* Theme Switcher */}
-          <View
-            style={[
-              styles.section,
-              {
-                backgroundColor: withAlpha(theme.card, 0.8),
-                borderColor: withAlpha(theme.border, 0.4),
-              },
-            ]}
-          >
-            <ThemeSwitcher />
+            <StatItem label="Seguindo" value={following} />
           </View>
 
           {/* Menu Items */}
           {[
-            { icon: 'bookmark-outline', label: 'Minhas Degustações' },
-            { icon: 'trophy-outline', label: 'Conquistas' },
-            { icon: 'settings-outline', label: 'Configurações' },
+            { icon: 'bookmark-outline', label: 'Minhas Degustações', route: '/tastings' },
+            { icon: 'trophy-outline', label: 'Conquistas', route: '/achievements' },
+            { icon: 'settings-outline', label: 'Configurações', route: '/settings' },
           ].map((item) => (
             <TouchableOpacity
               key={item.label}
@@ -123,6 +106,7 @@ export default function ProfileScreen() {
                 },
               ]}
               activeOpacity={0.7}
+              onPress={() => router.push(item.route as any)}
             >
               <Ionicons name={item.icon as any} size={20} color={theme.textMuted} />
               <Text style={[styles.menuLabel, { color: theme.text }]}>{item.label}</Text>
