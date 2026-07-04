@@ -12,7 +12,9 @@
  *   node scripts/reset-example-data.js --key=./service-account.json --email=you@example.com
  */
 
-const admin = require('firebase-admin');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
 
 function parseArgs() {
   const args = {};
@@ -38,12 +40,12 @@ async function main() {
     process.exit(1);
   }
 
-  admin.initializeApp({
-    credential: admin.credential.cert(require(require('path').resolve(keyPath))),
+  initializeApp({
+    credential: cert(require(require('path').resolve(keyPath))),
   });
 
-  const db = admin.firestore();
-  const user = await admin.auth().getUserByEmail(email);
+  const db = getFirestore();
+  const user = await getAuth().getUserByEmail(email);
   const userId = user.uid;
   const authorName = user.displayName || email.split('@')[0];
 
@@ -84,7 +86,7 @@ async function main() {
       rating: 5,
       likesCount: 12,
       commentsCount: 2,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     },
   ];
 
