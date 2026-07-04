@@ -1,0 +1,174 @@
+RENAMING LOG - Cubanos App - Lote de Charutos
+============================================================
+Data do processamento: 2026-07-01
+Total de imagens no lote: 54
+Total de nomes conhecidos na lista de referencia: 50
+Imagens processadas e renomeadas: 54
+
+METODO DE IDENTIFICACAO
+------------------------------------------------------------
+Leitura visual das bandas/labels de cada charuto (marca, vitola,
+cores, formato) comparando com a lista de 50 charutos fornecida.
+
+METODO DE REMOCAO DE FUNDO (NOVO)
+------------------------------------------------------------
+As imagens originais (Nano Banana Pro / Gemini) tinham um FALSO
+fundo transparente: o padrao xadrez estava desenhado nos pixels
+RGB, com canal alpha 100% opaco. Nao foi possivel baixar o modelo
+de IA do rembg (dominios de download bloqueados neste ambiente),
+entao foi implementado um removedor de fundo proprio:
+  1. Deteccao adaptativa das duas cores do xadrez de cada imagem
+     (lidas na propria borda da imagem, que e sempre fundo).
+  2. Segmentacao por 'flood fill' a partir da borda, isolando
+     apenas os pixels acinzentados conectados ao fundo real
+     (elementos brancos/pretos DENTRO do charuto, como texto de
+     bandas, sao preservados por nao estarem conectados a borda).
+  3. Suavizacao (feather) de ~1px nas bordas do charuto para uma
+     transicao natural.
+Resultado: todas as 54 imagens agora tem canal alpha real (nao
+constante), prontas para uso com transparencia de verdade no
+React Native e Firebase Storage.
+
+RESULTADO POR ARQUIVO
+------------------------------------------------------------
+✓ bg removida                Cohiba-Behike-52.png                          <- Cohiba Behike 52.png
+                             Cohiba Behike 52 | Cohiba | Cuba
+✓ bg removida                Drew-Estate-Undercrown-Maduro.png             <- Gemini_Generated_Image_1muqki1muqki1muq.png
+                             Drew Estate Undercrown Maduro | Drew Estate (Undercrown) | Nicaragua
+✓ bg removida                Sancho-Panza-Belicoso.png                     <- Gemini_Generated_Image_4bj3oe4bj3oe4bj3.png
+                             Sancho Panza Belicoso | Sancho Panza | Cuba
+✓ bg removida                Partagas-Lusitania.png                        <- Gemini_Generated_Image_5e9pbi5e9pbi5e9p.png
+                             Partagás Lusitania | Partagás | Cuba
+✓ bg removida                Fonseca-Cosacos.png                           <- Gemini_Generated_Image_5kiwek5kiwek5kiw.png
+                             Fonseca Cosacos | Fonseca | Cuba
+✓ bg removida                Crowned-Heads-Four-Kicudos.png                <- Gemini_Generated_Image_6ddgyu6ddgyu6ddg.png
+                             Crowned Heads Four Kicudos | Crowned Heads | Honduras/Nicaragua
+✓ bg removida                Trinidad-Reyes.png                            <- Gemini_Generated_Image_6rfp1r6rfp1r6rfp.png
+                             Trinidad Reyes | Trinidad | Cuba
+✓ bg removida                Cohiba-Siglo-VI.png                           <- Gemini_Generated_Image_87aikm87aikm87ai.png
+                             Cohiba Siglo VI | Cohiba | Cuba
+✓ bg removida                Punch-Punch.png                               <- Gemini_Generated_Image_8re2q18re2q18re2.png
+                             Punch Punch | Punch | Cuba
+✓ bg removida                Jose-L-Piedra-Petit-Cazadores.png             <- Gemini_Generated_Image_90mrub90mrub90mr.png
+                             José L. Piedra Petit Cazadores | José L. Piedra | Cuba
+✓ bg removida                Oliva-Serie-V-Melanio.png                     <- Gemini_Generated_Image_9z3uf49z3uf49z3u (1).png
+                             Oliva Serie V Melanio | Oliva | Nicaragua
+✓ bg removida                Oliva-Serie-G.png                             <- Gemini_Generated_Image_9z3uf49z3uf49z3u (2).png
+                             Oliva Serie G | Oliva | Nicaragua
+✓ bg removida                Ashton-VSG.png                                <- Gemini_Generated_Image_9z3uf49z3uf49z3u (3).png
+                             Ashton VSG | Ashton | Dominican Republic
+✓ bg removida                Ashton-ESG.png                                <- Gemini_Generated_Image_9z3uf49z3uf49z3u (4).png
+                             Ashton ESG | Ashton | Dominican Republic
+✓ bg removida                My-Father-Flor-de-las-Antillas.png            <- Gemini_Generated_Image_9z3uf49z3uf49z3u.png
+                             My Father Flor de las Antillas | My Father | Nicaragua
+✓ bg removida                Ramon-Allones-Specially-Selected.png          <- Gemini_Generated_Image_ajbs50ajbs50ajbs.png
+                             Ramón Allones Specially Selected | Ramón Allones | Cuba
+✓ bg removida                Vegas-Robaina-Unicos.png                      <- Gemini_Generated_Image_c089bec089bec089.png
+                             Vegas Robaina Unicos | Vegas Robaina | Cuba
+✓ bg removida                Plasencia-Alma-Fuerte.png                     <- Gemini_Generated_Image_ej61bvej61bvej61.png
+                             Plasencia Alma Fuerte | Plasencia | Nicaragua
+✓ bg removida                Romeo-y-Julieta-Churchill.png                 <- Gemini_Generated_Image_ejlmh2ejlmh2ejlm.png
+                             Romeo y Julieta Churchill | Romeo y Julieta | Cuba
+⚠ duplicate (bg removida)    Plasencia-Alma-Fuerte-2.png                   <- Gemini_Generated_Image_fmxyj9fmxyj9fmxy.png
+                             Plasencia Alma Fuerte | Plasencia | Nicaragua
+✓ bg removida                El-Rey-del-Mundo-Choix-Supreme.png            <- Gemini_Generated_Image_ij169tij169tij16.png
+                             El Rey del Mundo Choix Supreme | El Rey del Mundo | Cuba
+✓ bg removida                Illusione-Epernay.png                         <- Gemini_Generated_Image_j2vhk7j2vhk7j2vh.png
+                             Illusione Epernay | Illusione | Nicaragua
+✓ bg removida                Cohiba-Robusto.png                            <- Gemini_Generated_Image_jcl4tyjcl4tyjcl4.png
+                             Cohiba Robusto | Cohiba | Cuba
+✓ bg removida                H-Upmann-Magnum-46.png                        <- Gemini_Generated_Image_jw5wr8jw5wr8jw5w.png
+                             H. Upmann Magnum 46 | H. Upmann | Cuba
+✓ bg removida                La-Gloria-Cubana-Medaille-DOr.png             <- Gemini_Generated_Image_m3gpelm3gpelm3gp.png
+                             La Gloria Cubana Medaille D'Or | La Gloria Cubana | Cuba
+✓ bg removida                Hoyo-de-Monterrey-Epicure-No2.png             <- Gemini_Generated_Image_mat5pqmat5pqmat5 (1).png
+                             Hoyo de Monterrey Epicure No. 2 | Hoyo de Monterrey | Cuba
+⚠ duplicate (bg removida)    Hoyo-de-Monterrey-Epicure-No2-2.png           <- Gemini_Generated_Image_mat5pqmat5pqmat5.png
+                             Hoyo de Monterrey Epicure No. 2 | Hoyo de Monterrey | Cuba
+✓ bg removida                Romeo-y-Julieta-Wide-Churchill.png            <- Gemini_Generated_Image_mxrx2bmxrx2bmxrx.png
+                             Romeo y Julieta Wide Churchill | Romeo y Julieta | Cuba
+✓ bg removida                San-Cristobal-El-Principe.png                 <- Gemini_Generated_Image_o1dtdo1dtdo1dtdo.png
+                             San Cristóbal El Príncipe | San Cristóbal | Cuba
+✓ bg removida                Montecristo-No2.png                           <- Gemini_Generated_Image_okkpfnokkpfnokkp.png
+                             Montecristo No. 2 | Montecristo | Cuba
+✓ bg removida                Montecristo-Especial.png                      <- Gemini_Generated_Image_qf4q6xqf4q6xqf4q.png
+                             Montecristo Especial | Montecristo | Cuba
+✓ bg removida                Bolivar-Royal-Corona.png                      <- Gemini_Generated_Image_qkmpwiqkmpwiqkmp.png
+                             Bolívar Royal Corona | Bolívar | Cuba
+✓ bg removida                Davidoff-Nicaragua-Box-Pressed.png            <- Gemini_Generated_Image_ro1fmsro1fmsro1f (1).png
+                             Davidoff Nicaragua Box-Pressed | Davidoff | Nicaragua
+✓ bg removida                Rocky-Patel-Decade.png                        <- Gemini_Generated_Image_ro1fmsro1fmsro1f (2).png
+                             Rocky Patel Decade | Rocky Patel | Honduras
+✓ bg removida                Perdomo-20th-Anniversary.png                  <- Gemini_Generated_Image_ro1fmsro1fmsro1f (3).png
+                             Perdomo 20th Anniversary | Perdomo | Nicaragua
+✓ bg removida                Liga-Privada-No9.png                          <- Gemini_Generated_Image_ro1fmsro1fmsro1f (4).png
+                             Liga Privada No. 9 | Drew Estate (Liga Privada) | Nicaragua
+✓ bg removida                Davidoff-Winston-Churchill.png                <- Gemini_Generated_Image_ro1fmsro1fmsro1f.png
+                             Davidoff Winston Churchill | Davidoff | Dominican Republic
+✓ bg removida                Partagas-Serie-D-No4.png                      <- Gemini_Generated_Image_s0kkgos0kkgos0kk.png
+                             Partagás Serie D No. 4 | Partagás | Cuba
+✓ bg removida                Quai-dOrsay-Robusto.png                       <- Gemini_Generated_Image_s6as98s6as98s6as.png
+                             Quai d'Orsay Robusto | Quai d'Orsay | Cuba
+✓ bg removida                Trinidad-Vigia.png                            <- Gemini_Generated_Image_umyyclumyyclumyy.png
+                             Trinidad Vigia | Trinidad | Cuba
+✓ bg removida                Undercrown-Shade.png                          <- Gemini_Generated_Image_v6hg4kv6hg4kv6hg1.png
+                             Undercrown Shade | Drew Estate (Undercrown) | Nicaragua
+✓ bg removida                Camacho-Triple-Maduro.png                     <- Gemini_Generated_Image_v6hg4kv6hg4kv6hg2.png
+                             Camacho Triple Maduro | Camacho | Honduras
+✓ bg removida                EP-Carrillo-Encore-Majestic.png               <- Gemini_Generated_Image_v6hg4kv6hg4kv6hg3.png
+                             E.P. Carrillo Encore Majestic | E.P. Carrillo | Dominican Republic
+✓ bg removida                Alec-Bradley-Prensado.png                     <- Gemini_Generated_Image_v6hg4kv6hg4kv6hg4.png
+                             Alec Bradley Prensado | Alec Bradley | Honduras
+✓ bg removida                Foundation-Charter-Oak.png                    <- Gemini_Generated_Image_v6hg4kv6hg4kv6hg5.png
+                             Foundation Charter Oak | Foundation | Nicaragua
+⚠ duplicate (bg removida)    Drew-Estate-Undercrown-Maduro-2.png           <- Gemini_Generated_Image_waehs5waehs5waeh.png
+                             Drew Estate Undercrown Maduro | Drew Estate (Undercrown) | Nicaragua
+✓ bg removida                Diplomaticos-No2.png                          <- Gemini_Generated_Image_wgai3owgai3owgai.png
+                             Diplomáticos No. 2 | Diplomáticos | Cuba
+⚠ duplicate (bg removida)    Cohiba-Robusto-2.png                          <- Gemini_Generated_Image_xzl3j3xzl3j3xzl3.png
+                             Cohiba Robusto | Cohiba | Cuba
+✓ bg removida                Padron-Family-Reserve-45.png                  <- Gemini_Generated_Image_yg52epyg52epyg52 (1).png
+                             Padrón Family Reserve 45 | Padrón | Nicaragua
+✓ bg removida                Arturo-Fuente-Opus-X.png                      <- Gemini_Generated_Image_yg52epyg52epyg52 (2).png
+                             Arturo Fuente Opus X | Arturo Fuente | Dominican Republic
+✓ bg removida                Arturo-Fuente-Hemingway-Signature.png         <- Gemini_Generated_Image_yg52epyg52epyg52 (3).png
+                             Arturo Fuente Hemingway Signature | Arturo Fuente | Dominican Republic
+✓ bg removida                My-Father-Le-Bijou-1922.png                   <- Gemini_Generated_Image_yg52epyg52epyg52 (4).png
+                             My Father Le Bijou 1922 | My Father | Nicaragua
+✓ bg removida                Padron-1926-Serie-No9.png                     <- Gemini_Generated_Image_yg52epyg52epyg52.png
+                             Padrón 1926 Serie No. 9 | Padrón | Nicaragua
+✓ bg removida                La-Aurora-1495.png                            <- Gemini_Generated_Image_zgv5y4zgv5y4zgv5.png
+                             La Aurora 1495 | La Aurora | Dominican Republic
+
+DUPLICATAS DETECTADAS (mesma banda/charuto gerado 2x)
+------------------------------------------------------------
+- Plasencia-Alma-Fuerte.png / Plasencia-Alma-Fuerte-2.png
+- Hoyo-de-Monterrey-Epicure-No2.png / -2.png
+- Drew-Estate-Undercrown-Maduro.png / -2.png
+- Cohiba-Robusto.png / Cohiba-Robusto-2.png
+Os 50 nomes da lista de referencia foram todos localizados;
+as 4 imagens excedentes (54 - 50) sao repeticoes visuais dos
+charutos acima, mantidas com sufixo '-2' em vez de descartadas.
+
+OBSERVACOES DE QUALIDADE RESTANTES
+------------------------------------------------------------
+- Fundo removido programaticamente (deteccao adaptativa do padrao xadrez + flood-fill a partir da borda). Todas as 54 imagens agora tem canal alpha real.
+- Pequenos artefatos residuais (brilhos/sparkles de 1-3px) permanecem em ~6 imagens (ex: Oliva-Serie-V-Melanio, Ashton-ESG, Alec-Bradley-Prensado) -- resíduos do proprio gerador de imagem, nao do processo de remocao de fundo. Cosmeticamente irrelevantes no tamanho de uso do app.
+- Trinidad Reyes (#7) e Trinidad Vigia (#40) tem bandas quase identicas -- diferenciacao por tamanho foi uma estimativa; confirmar manualmente.
+- Partagas Lusitania (#4): o texto da vitola saiu distorcido do gerador ('ANBILHA'); identificado pelo formato + marca.
+- 4 duplicatas visuais mantidas com sufixo '-2': Plasencia-Alma-Fuerte, Hoyo-de-Monterrey-Epicure-No2, Drew-Estate-Undercrown-Maduro, Cohiba-Robusto.
+
+PADRAO DE NAMING PARA REFERENCIA NO CODIGO (React Native)
+------------------------------------------------------------
+Formato do arquivo: [Brand]-[Vitola-ou-Nome].png (PascalCase,
+hifens entre palavras, sem acentos/apostrofos/caracteres especiais).
+Exemplo de uso: require(`../assets/cigars/${slug}.png`) ou URL
+no Firebase Storage: gs://cubanos-app/cigars/{slug}.png
+O campo 'name' em cigar-mapping.json mantem a grafia correta
+(com acentos) para exibicao na UI; o nome do arquivo e o slug
+ASCII usado como chave/ID.
+
+LOCALIZACAO DOS ARQUIVOS FINAIS
+------------------------------------------------------------
+Pasta Charutos/cigs-final/  -> 54 PNGs renomeados com fundo
+transparente real, prontos para upload no Firebase Storage.
