@@ -186,6 +186,60 @@ export function CigarDetailSheet({ item, onClose }: Props) {
               </View>
             </View>
 
+            {/* Detalhes de compra — só renderiza se algum campo existir */}
+            {(item.purchaseType ||
+              item.boxCode ||
+              item.purchaseCountry ||
+              item.seller) && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionLabel, { color: theme.accent }]}>
+                  Detalhes de compra
+                </Text>
+                <View style={styles.purchaseDetails}>
+                  {item.purchaseType && (
+                    <View style={styles.purchaseRow}>
+                      <Text style={[styles.purchaseKey, { color: theme.textMuted }]}>Tipo</Text>
+                      <Text style={[styles.purchaseValue, { color: theme.text }]}>
+                        {item.purchaseType === 'box_pack'
+                          ? `Caixa/Pacote${item.boxSize ? ` (${item.boxSize})` : ''}`
+                          : 'Avulso'}
+                      </Text>
+                    </View>
+                  )}
+                  {item.purchaseCountry && (
+                    <View style={styles.purchaseRow}>
+                      <Text style={[styles.purchaseKey, { color: theme.textMuted }]}>
+                        País de compra
+                      </Text>
+                      <Text style={[styles.purchaseValue, { color: theme.text }]}>
+                        {item.purchaseCountry}
+                      </Text>
+                    </View>
+                  )}
+                  {item.seller && (
+                    <View style={styles.purchaseRow}>
+                      <Text style={[styles.purchaseKey, { color: theme.textMuted }]}>
+                        Loja / vendedor
+                      </Text>
+                      <Text style={[styles.purchaseValue, { color: theme.text }]}>
+                        {item.seller}
+                      </Text>
+                    </View>
+                  )}
+                  {item.boxCode && (
+                    <View style={styles.purchaseRow}>
+                      <Text style={[styles.purchaseKey, { color: theme.textMuted }]}>
+                        Código da caixa
+                      </Text>
+                      <Text style={[styles.purchaseValue, { color: theme.text }]}>
+                        {item.boxCode}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
+
             {/* Curiosidades */}
             {!!item.curiosities && (
               <View style={styles.section}>
@@ -343,6 +397,21 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 20,
     gap: 8,
+  },
+  purchaseDetails: {
+    gap: 8,
+  },
+  purchaseRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  purchaseKey: {
+    fontSize: 13,
+  },
+  purchaseValue: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   sectionLabel: {
     fontSize: 11,

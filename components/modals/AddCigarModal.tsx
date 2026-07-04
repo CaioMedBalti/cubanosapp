@@ -31,6 +31,7 @@ import { identifyCigar, parseBulkText, identifyCigarImage } from '@/lib/ai';
 import { uploadUserCigarPhoto, getStockPhotoUrls } from '@/lib/photos';
 import { useCigarMatching } from '@/hooks/useCigarMatching';
 import { MatchConfirmationModal } from '@/components/modals/MatchConfirmationModal';
+import { AdvancedHumidorFields, AdvancedHumidorFieldsValue } from '@/components/modals/AdvancedHumidorFields';
 import type { CigarCatalogEntry } from '@/lib/cigarImages';
 import type { CigarAIResult, BulkParseItem, HumidorEntry } from '@/lib/firebase';
 
@@ -392,6 +393,7 @@ export function AddCigarModal({ visible, onClose }: Props) {
   const [status, setStatus] = useState<HumidorEntry['status']>('intact');
   const [saving, setSaving] = useState(false);
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
+  const [advancedFields, setAdvancedFields] = useState<AdvancedHumidorFieldsValue>({});
 
   // Fuzzy catalog match awaiting user confirmation before saving
   const [pendingMatch, setPendingMatch] = useState<{
@@ -430,6 +432,7 @@ export function AddCigarModal({ visible, onClose }: Props) {
         setStatus('intact');
         setSaving(false);
         setSelectedPhotoUrl(null);
+        setAdvancedFields({});
         setCigarName('');
         setSinglePhase('idle');
         setSingleResult(null);
@@ -477,9 +480,17 @@ export function AddCigarModal({ visible, onClose }: Props) {
         photoUrl: selectedPhotoUrl ?? undefined,
         cigarId,
         unidentified,
+        purchaseType: advancedFields.purchaseType,
+        boxSize:
+          advancedFields.purchaseType === 'box_pack' && advancedFields.boxSize
+            ? Number(advancedFields.boxSize)
+            : undefined,
+        boxCode: advancedFields.boxCode || undefined,
+        purchaseCountry: advancedFields.purchaseCountry || undefined,
+        seller: advancedFields.seller || undefined,
       });
     },
-    [uid, quantity, status, selectedPhotoUrl],
+    [uid, quantity, status, selectedPhotoUrl, advancedFields],
   );
 
   const handleConfirmMatch = async () => {
@@ -814,6 +825,7 @@ export function AddCigarModal({ visible, onClose }: Props) {
 
                     <QuantityStepper value={quantity} onChange={setQuantity} />
                     <StatusPicker value={status} onChange={setStatus} />
+                    <AdvancedHumidorFields value={advancedFields} onChange={setAdvancedFields} />
 
                     <TouchableOpacity
                       style={[
@@ -1057,6 +1069,7 @@ export function AddCigarModal({ visible, onClose }: Props) {
 
                         <QuantityStepper value={quantity} onChange={setQuantity} />
                         <StatusPicker value={status} onChange={setStatus} />
+                        <AdvancedHumidorFields value={advancedFields} onChange={setAdvancedFields} />
 
                         <TouchableOpacity
                           style={[

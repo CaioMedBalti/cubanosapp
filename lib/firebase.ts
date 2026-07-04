@@ -40,6 +40,8 @@ export const COLLECTIONS = {
   TASTINGS: 'tastings',
   POSTS: 'posts',
   FOLLOWS: 'follows',
+  LIKES: 'likes',
+  LOUNGES: 'lounges',
 } as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -120,6 +122,10 @@ export interface Comment {
   id: string;
   postId: string;
   userId: string;
+  // Denormalized at write time, same pattern as FeedPost.authorName/avatarUrl —
+  // avoids a UserProfile lookup per comment when rendering the list.
+  authorName?: string;
+  avatarUrl?: string | null;
   content: string;
   createdAt: string;
 }
@@ -128,6 +134,27 @@ export interface Follow {
   followerId: string;
   followingId: string;
   createdAt?: string;
+}
+
+export interface Like {
+  postId: string;
+  userId: string;
+  createdAt?: string;
+}
+
+export interface Lounge {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  country: string;
+  lat: number;
+  lng: number;
+  phone?: string;
+  description?: string;
+  submittedBy?: string;
+  status: 'pending' | 'approved';
+  createdAt: string;
 }
 
 // ─── Denormalized types for MVP UI ───────────────────────────────────────────
@@ -188,6 +215,12 @@ export interface HumidorEntry {
   curiosities?: string;
   history?: string;
   photoUrl?: string;
+  // Detalhes de compra — opcionais, preenchidos via bloco "avançado" no AddCigarModal
+  purchaseType?: 'single' | 'box_pack';
+  boxSize?: number;
+  boxCode?: string;
+  purchaseCountry?: string;
+  seller?: string;
 }
 
 export interface CigarAIResult {

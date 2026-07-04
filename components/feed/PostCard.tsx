@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/themeStore';
@@ -6,6 +6,9 @@ import { withAlpha } from '@/lib/theme';
 import { AnilhaRating } from '@/components/ui/AnilhaRating';
 import { FeedPost } from '@/lib/firebase';
 import { timeAgo } from '@/lib/time';
+import { useAuthStore } from '@/store/authStore';
+import { likePost, unlikePost, subscribeIsLiked } from '@/lib/firestore';
+import { CommentsSheet } from '@/components/modals/CommentsSheet';
 
 interface PostCardProps {
   post: FeedPost;
@@ -14,8 +17,29 @@ interface PostCardProps {
 
 export function PostCard({ post, onPress }: PostCardProps) {
   const theme = useTheme();
+  const uid = useAuthStore((s) => s.uid);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeBusy, setLikeBusy] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!uid) return;
+    return subscribeIsLiked(post.id, uid, setIsLiked);
+  }, [uid, post.id]);
+
+  const handleToggleLike = async () => {
+    if (!uid || likeBusy) return;
+    setLikeBusy(true);
+    try {
+      if (isLiked) await unlikePost(post.id, uid);
+      else await likePost(post.id, uid);
+    } finally {
+      setLikeBusy(false);
+    }
+  };
 
   return (
+    <>
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
@@ -95,13 +119,17 @@ export function PostCard({ post, onPress }: PostCardProps) {
 
           {/* Footer */}
           <View style={[styles.footer, { borderTopColor: withAlpha(theme.border, 0.25) }]}>
-            <TouchableOpacity style={styles.action}>
-              <Ionicons name="heart-outline" size={16} color={theme.textMuted} />
+            <TouchableOpacity style={styles.action} onPress={handleToggleLike} disabled={!uid}>
+              <Ionicons
+                name={isLiked ? 'heart' : 'heart-outline'}
+                size={16}
+                color={isLiked ? '#e0453f' : theme.textMuted}
+              />
               <Text style={[styles.actionCount, { color: theme.textMuted }]}>
                 {post.likesCount}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.action}>
+            <TouchableOpacity style={styles.action} onPress={() => setCommentsOpen(true)}>
               <Ionicons name="chatbubble-outline" size={15} color={theme.textMuted} />
               <Text style={[styles.actionCount, { color: theme.textMuted }]}>
                 {post.commentsCount}
@@ -114,6 +142,12 @@ export function PostCard({ post, onPress }: PostCardProps) {
         </View>
       </View>
     </TouchableOpacity>
+
+    <CommentsSheet
+      postId={commentsOpen ? post.id : null}
+      onClose={() => setCommentsOpen(false)}
+    />
+    </>
   );
 }
 

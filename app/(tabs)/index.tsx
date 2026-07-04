@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   FlatList,
   View,
@@ -13,7 +13,62 @@ import { VideoBackground } from '@/components/ui/VideoBackground';
 import { PostCard } from '@/components/feed/PostCard';
 import { withAlpha } from '@/lib/theme';
 import { usePosts } from '@/hooks/usePosts';
-import { FeedPost } from '@/lib/firebase';
+import { useCatalog } from '@/hooks/useCatalog';
+import { FeedPost, CigarCatalog, WhiskyCatalog } from '@/lib/firebase';
+import {
+  getCigarOfTheDay,
+  getBrandSpotlight,
+  getCuratedCollections,
+  getPairingOfTheDay,
+} from '@/lib/discoveryCuration';
+import { CigarOfTheDayCard } from '@/components/discovery/CigarOfTheDayCard';
+import { BrandSpotlightCard } from '@/components/discovery/BrandSpotlightCard';
+import { CuratedCollectionRow } from '@/components/discovery/CuratedCollectionRow';
+import { PairingOfTheDayCard } from '@/components/discovery/PairingOfTheDayCard';
+
+// Chave estável do dia (fuso local) usada como dependência do useMemo — a
+// curadoria em si é recalculada apenas quando o dia ou o catálogo mudam.
+function todayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function DiscoveryHeader() {
+  const { items: catalogItems } = useCatalog();
+
+  const cigars = useMemo(
+    () => catalogItems.filter((i) => i.itemType === 'cigar') as (CigarCatalog & { itemType: 'cigar' })[],
+    [catalogItems],
+  );
+  const whiskies = useMemo(
+    () => catalogItems.filter((i) => i.itemType === 'whisky') as (WhiskyCatalog & { itemType: 'whisky' })[],
+    [catalogItems],
+  );
+
+  const key = todayKey();
+  const cigarOfDay = useMemo(() => getCigarOfTheDay(cigars), [cigars, key]);
+  const brandSpotlight = useMemo(() => getBrandSpotlight(cigars), [cigars, key]);
+  const curatedCollections = useMemo(() => getCuratedCollections(cigars), [cigars]);
+  const pairingOfDay = useMemo(
+    () => getPairingOfTheDay(cigars, whiskies),
+    [cigars, whiskies, key],
+  );
+
+  if (!cigarOfDay && !brandSpotlight && curatedCollections.length === 0 && !pairingOfDay) {
+    return null;
+  }
+
+  return (
+    <View style={styles.discoverySection}>
+      {cigarOfDay && <CigarOfTheDayCard cigar={cigarOfDay} />}
+      {pairingOfDay && <PairingOfTheDayCard pairing={pairingOfDay} />}
+      {brandSpotlight && <BrandSpotlightCard spotlight={brandSpotlight} />}
+      {curatedCollections.map((collection) => (
+        <CuratedCollectionRow key={collection.title} collection={collection} />
+      ))}
+    </View>
+  );
+}
 
 export default function FeedScreen() {
   const theme = useTheme();
@@ -39,14 +94,6 @@ export default function FeedScreen() {
           <View style={styles.center}>
             <ActivityIndicator color={theme.accent} />
           </View>
-        ) : posts.length === 0 ? (
-          <View style={styles.center}>
-            <Text style={[styles.emptyIcon, { color: withAlpha(theme.accent, 0.4) }]}>🍃</Text>
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>Nenhum post ainda</Text>
-            <Text style={[styles.emptyHint, { color: theme.textMuted }]}>
-              Registre uma degustação pública ou siga outros colecionadores para ver posts aqui.
-            </Text>
-          </View>
         ) : (
           <FlatList
             data={posts}
@@ -54,6 +101,16 @@ export default function FeedScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
             showsVerticalScrollIndicator={false}
+            ListHeaderComponent={<DiscoveryHeader />}
+            ListEmptyComponent={
+              <View style={styles.center}>
+                <Text style={[styles.emptyIcon, { color: withAlpha(theme.accent, 0.4) }]}>🍃</Text>
+                <Text style={[styles.emptyTitle, { color: theme.text }]}>Nenhum post ainda</Text>
+                <Text style={[styles.emptyHint, { color: theme.textMuted }]}>
+                  Registre uma degustação pública ou siga outros colecionadores para ver posts aqui.
+                </Text>
+              </View>
+            }
           />
         )}
       </SafeAreaView>
@@ -64,6 +121,7 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safe: { flex: 1 },
+  discoverySection: { paddingTop: 12, paddingBottom: 4 },
   header: {
     paddingHorizontal: 20,
     paddingVertical: 14,

@@ -17,14 +17,30 @@ import { withAlpha } from '@/lib/theme';
 import { useHumidor } from '@/hooks/useHumidor';
 import { useProfileStats } from '@/hooks/useProfileStats';
 
-function StatItem({ label, value }: { label: string; value: number | string }) {
+function StatItem({
+  label,
+  value,
+  onPress,
+}: {
+  label: string;
+  value: number | string;
+  onPress?: () => void;
+}) {
   const theme = useTheme();
-  return (
-    <View style={styles.statItem}>
+  const content = (
+    <>
       <Text style={[styles.statValue, { color: theme.text }]}>{value}</Text>
       <Text style={[styles.statLabel, { color: theme.textMuted }]}>{label}</Text>
-    </View>
+    </>
   );
+  if (onPress) {
+    return (
+      <TouchableOpacity style={styles.statItem} onPress={onPress} activeOpacity={0.7}>
+        {content}
+      </TouchableOpacity>
+    );
+  }
+  return <View style={styles.statItem}>{content}</View>;
 }
 
 export default function ProfileScreen() {
@@ -85,15 +101,24 @@ export default function ProfileScreen() {
             <View style={[styles.statDivider, { backgroundColor: withAlpha(theme.border, 0.4) }]} />
             <StatItem label="Humidor" value={cigarsInHumidor} />
             <View style={[styles.statDivider, { backgroundColor: withAlpha(theme.border, 0.4) }]} />
-            <StatItem label="Seguidores" value={followers} />
+            <StatItem
+              label="Seguidores"
+              value={followers}
+              onPress={() => uid && router.push(`/connections/${uid}?type=followers`)}
+            />
             <View style={[styles.statDivider, { backgroundColor: withAlpha(theme.border, 0.4) }]} />
-            <StatItem label="Seguindo" value={following} />
+            <StatItem
+              label="Seguindo"
+              value={following}
+              onPress={() => uid && router.push(`/connections/${uid}?type=following`)}
+            />
           </View>
 
           {/* Menu Items */}
           {[
             { icon: 'bookmark-outline', label: 'Minhas Degustações', route: '/tastings' },
             { icon: 'trophy-outline', label: 'Conquistas', route: '/achievements' },
+            { icon: 'location-outline', label: 'Lounges', route: '/lounges' },
             { icon: 'settings-outline', label: 'Configurações', route: '/settings' },
           ].map((item) => (
             <TouchableOpacity

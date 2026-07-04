@@ -13,6 +13,7 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
+  increment,
   CollectionReference,
   Unsubscribe,
 } from 'firebase/firestore';
@@ -25,6 +26,8 @@ import {
   HumidorEntry,
   UserProfile,
   Tasting,
+  Comment,
+  Lounge,
 } from './firebase';
 
 // ─── Feed (following-based) ────────────────────────────────────────────────────
@@ -390,6 +393,171 @@ export function subscribeFollowingIds(
       callback([]);
     },
   );
+}
+
+// ─── Likes ───────────────────────────────────────────────────────────────────
+// Same deterministic doc id pattern as follows (`${postId}_${userId}`) — avoids
+// a duplicate-like race and lets us derive isLiked from doc existence alone.
+
+function likeDocId(postId: string, userId: string): string {
+  return `${postId}_${userId}`;
+}
+
+export async function likePost(postId: string, userId: string): Promise<void> {
+  await Promise.all([
+    setDoc(doc(db, COLLECTIONS.LIKES, likeDocId(postId, userId)), {
+      postId,
+      userId,
+      createdAt: serverTimestamp(),
+    }),
+    updateDoc(doc(db, COLLECTIONS.POSTS, postId), { likesCount: increment(1) }),
+  ]);
+}
+
+export async function unlikePost(postId: string, userId: string): Promise<void> {
+  await Promise.all([
+    deleteDoc(doc(db, COLLECTIONS.LIKES, likeDocId(postId, userId))),
+    updateDoc(doc(db, COLLECTIONS.POSTS, postId), { likesCount: increment(-1) }),
+  ]);
+}
+
+export function subscribeIsLiked(
+  postId: string,
+  userId: string,
+  callback: (isLiked: boolean) => void,
+): Unsubscribe {
+  return onSnapshot(
+    doc(db, COLLECTIONS.LIKES, likeDocId(postId, userId)),
+    (snap) => callback(snap.exists()),
+    (err) => {
+      console.error('subscribeIsLiked error:', err);
+      callback(false);
+    },
+  );
+}
+
+// ─── Comments ────────────────────────────────────────────────────────────────
+// Subcollection posts/{postId}/comments — orderBy alone on a subcollection
+// doesn't need a manual composite index (unlike a top-level `comments`
+// collection queried with where(postId)+orderBy, which would).
+
+export function subscribeComments(
+  postId: string,
+  callback: (comments: Comment[]) => void,
+): Unsubscribe {
+  const q = query(
+    collection(db, COLLECTIONS.POSTS, postId, 'comments'),
+    orderBy('createdAt', 'asc'),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(snap.docs.map((d) => ({ id: d.id, postId, ...d.data() }) as Comment));
+    },
+    (err) => {
+      console.error('subscribeComments error:', err);
+      callback([]);
+    },
+  );
+}
+
+export async function addComment(
+  postId: string,
+  userId: string,
+  content: string,
+  authorName?: string,
+  avatarUrl?: string | null,
+): Promise<void> {
+  await Promise.all([
+    addDoc(collection(db, COLLECTIONS.POSTS, postId, 'comments'), {
+      userId,
+      authorName: authorName ?? null,
+      avatarUrl: avatarUrl ?? null,
+      content,
+      createdAt: serverTimestamp(),
+    }),
+    updateDoc(doc(db, COLLECTIONS.POSTS, postId), { commentsCount: increment(1) }),
+  ]);
+}
+
+// ─── Followers / Following lists ────────────────────────────────────────────
+
+async function resolveUserProfiles(uids: string[]): Promise<UserProfile[]> {
+  if (uids.length === 0) return [];
+  const chunks = chunk(uids, 10);
+  const results = await Promise.all(
+    chunks.map(async (ids) => {
+      const snap = await getDocs(
+        query(collection(db, COLLECTIONS.USERS), where('__name__', 'in', ids)),
+      );
+      return snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UserProfile);
+    }),
+  );
+  return results.flat();
+}
+
+export function subscribeFollowersList(
+  userId: string,
+  callback: (users: UserProfile[]) => void,
+): Unsubscribe {
+  const q = query(collection(db, COLLECTIONS.FOLLOWS), where('followingId', '==', userId));
+  return onSnapshot(
+    q,
+    async (snap) => {
+      const ids = snap.docs.map((d) => d.data().followerId as string);
+      callback(await resolveUserProfiles(ids));
+    },
+    (err) => {
+      console.error('subscribeFollowersList error:', err);
+      callback([]);
+    },
+  );
+}
+
+export function subscribeFollowingList(
+  userId: string,
+  callback: (users: UserProfile[]) => void,
+): Unsubscribe {
+  const q = query(collection(db, COLLECTIONS.FOLLOWS), where('followerId', '==', userId));
+  return onSnapshot(
+    q,
+    async (snap) => {
+      const ids = snap.docs.map((d) => d.data().followingId as string);
+      callback(await resolveUserProfiles(ids));
+    },
+    (err) => {
+      console.error('subscribeFollowingList error:', err);
+      callback([]);
+    },
+  );
+}
+
+// ─── Lounges ─────────────────────────────────────────────────────────────────
+// `where` único, sem `orderBy` — sem índice composto manual. Ordenação
+// (distância ou nome) é feita client-side, lista pequena, sem paginação.
+
+export function subscribeApprovedLounges(
+  callback: (lounges: Lounge[]) => void,
+): Unsubscribe {
+  const q = query(collection(db, COLLECTIONS.LOUNGES), where('status', '==', 'approved'));
+  return onSnapshot(
+    q,
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Lounge)),
+    (err) => {
+      console.error('subscribeApprovedLounges error:', err);
+      callback([]);
+    },
+  );
+}
+
+export async function submitLounge(
+  input: Omit<Lounge, 'id' | 'status' | 'createdAt'>,
+): Promise<void> {
+  await addDoc(collection(db, COLLECTIONS.LOUNGES), {
+    ...input,
+    status: 'pending',
+    createdAt: serverTimestamp(),
+  });
 }
 
 export async function findUserByUsername(username: string): Promise<UserProfile | null> {

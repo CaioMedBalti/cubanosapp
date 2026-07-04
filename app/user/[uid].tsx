@@ -132,14 +132,22 @@ export default function PublicProfileScreen() {
                   <Text style={[styles.statValue, { color: theme.text }]}>{tastingCount}</Text>
                   <Text style={[styles.statLabel, { color: theme.textMuted }]}>Degustações</Text>
                 </View>
-                <View style={styles.statItem}>
+                <TouchableOpacity
+                  style={styles.statItem}
+                  activeOpacity={0.7}
+                  onPress={() => router.push(`/connections/${uid}?type=followers`)}
+                >
                   <Text style={[styles.statValue, { color: theme.text }]}>{followers}</Text>
                   <Text style={[styles.statLabel, { color: theme.textMuted }]}>Seguidores</Text>
-                </View>
-                <View style={styles.statItem}>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.statItem}
+                  activeOpacity={0.7}
+                  onPress={() => router.push(`/connections/${uid}?type=following`)}
+                >
                   <Text style={[styles.statValue, { color: theme.text }]}>{following}</Text>
                   <Text style={[styles.statLabel, { color: theme.textMuted }]}>Seguindo</Text>
-                </View>
+                </TouchableOpacity>
               </View>
 
               {uid !== myUid && (

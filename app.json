@@ -43,6 +43,12 @@
           "photosPermission": "O app acessa suas fotos para identificar charutos.",
           "cameraPermission": "O app usa a câmera para fotografar a anilha do charuto."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O app usa sua localização para ordenar os Lounges por proximidade."
+        }
       ]
     ],
     "experiments": {
