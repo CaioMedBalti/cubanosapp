@@ -34,7 +34,14 @@
     "plugins": [
       "expo-router",
       "expo-video",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "backgroundColor": "#0d0a08"
+        }
+      ],
       "expo-font",
       "expo-status-bar",
       [

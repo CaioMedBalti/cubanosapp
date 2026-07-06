@@ -8,12 +8,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuthStore } from '@/store/authStore';
+import { useTransitionStore } from '@/store/transitionStore';
 import { useTheme } from '@/store/themeStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { ThemedButton } from '@/components/ui/ThemedButton';
@@ -22,6 +24,7 @@ import { withAlpha } from '@/lib/theme';
 export default function LoginScreen() {
   const theme = useTheme();
   const setUid = useAuthStore((s) => s.setUid);
+  const startTransition = useTransitionStore((s) => s.start);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,6 +37,9 @@ export default function LoginScreen() {
     try {
       const credential = await signInWithEmailAndPassword(auth, email, password);
       setUid(credential.user.uid);
+      // O overlay de vídeo sobe na frente enquanto a Home monta por baixo;
+      // quando o clipe termina, o fade revela a tela já carregada.
+      startTransition();
       router.replace('/(tabs)/');
     } catch (e: any) {
       setError('E-mail ou senha incorretos.');
@@ -57,6 +63,11 @@ export default function LoginScreen() {
         >
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
             <View style={styles.logoArea}>
+              <Image
+                source={require('@/assets/cubanos_logo.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
               <Text style={[styles.logoTitle, { color: theme.accent }]}>CUBANOS</Text>
               <Text style={[styles.logoSub, { color: theme.textMuted }]}>
                 Colecionadores Premium
@@ -121,6 +132,7 @@ const styles = StyleSheet.create({
   kav: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   logoArea: { alignItems: 'center', marginBottom: 40, gap: 4 },
+  logoImage: { width: 110, height: 110, borderRadius: 24, marginBottom: 12 },
   logoTitle: { fontSize: 36, fontWeight: '900', letterSpacing: 8 },
   logoSub: { fontSize: 13, letterSpacing: 3, textTransform: 'uppercase' },
   form: { borderRadius: 20, borderWidth: 1, padding: 24, gap: 16 },

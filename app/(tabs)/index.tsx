@@ -6,8 +6,10 @@ import {
   StyleSheet,
   ListRenderItem,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/store/themeStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { PostCard } from '@/components/feed/PostCard';
@@ -31,6 +33,12 @@ import { PairingOfTheDayCard } from '@/components/discovery/PairingOfTheDayCard'
 function todayKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function greetingForHour(hour: number): string {
+  if (hour >= 5 && hour < 12) return 'Bom dia';
+  if (hour >= 12 && hour < 18) return 'Boa tarde';
+  return 'Boa noite';
 }
 
 function DiscoveryHeader() {
@@ -73,6 +81,8 @@ function DiscoveryHeader() {
 export default function FeedScreen() {
   const theme = useTheme();
   const { posts, loading } = usePosts();
+  const username = useAuthStore((s) => s.profile?.username);
+  const greeting = `${greetingForHour(new Date().getHours())}, ${username ?? 'Aficionado'}`;
 
   const renderItem: ListRenderItem<FeedPost> = ({ item }) => (
     <PostCard post={item} />
@@ -83,10 +93,18 @@ export default function FeedScreen() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: withAlpha(theme.border, 0.25) }]}>
-          <View style={styles.headerLeft}>
-            <Text style={[styles.headerTitle, { color: theme.accent }]}>CUBANOS</Text>
-            <View style={[styles.headerRule, { backgroundColor: withAlpha(theme.accent, 0.35) }]} />
-            <Text style={[styles.headerSub, { color: theme.textMuted }]}>Feed</Text>
+          <Image
+            source={require('@/assets/cubanos_logo.png')}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <View style={styles.headerText}>
+            <View style={styles.headerLeft}>
+              <Text style={[styles.headerTitle, { color: theme.accent }]}>CUBANOS</Text>
+              <View style={[styles.headerRule, { backgroundColor: withAlpha(theme.accent, 0.35) }]} />
+              <Text style={[styles.headerSub, { color: theme.textMuted }]}>Feed</Text>
+            </View>
+            <Text style={[styles.headerGreeting, { color: theme.textMuted }]}>{greeting}</Text>
           </View>
         </View>
 
@@ -128,11 +146,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
+  },
+  headerLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+  },
+  headerText: {
+    gap: 2,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  headerGreeting: {
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
   headerTitle: {
     fontSize: 24,

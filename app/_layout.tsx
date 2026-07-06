@@ -1,5 +1,5 @@
 import '../global.css';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StatusBar, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -7,6 +7,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useActiveTheme, useTheme } from '@/store/themeStore';
 import { THEMES, DEFAULT_THEME } from '@/constants/themes';
 import { useAuthListener } from '@/hooks/useAuthListener';
+import { AppIntroAnimation } from '@/components/ui/AppIntroAnimation';
+import { LoginTransitionOverlay } from '@/components/ui/LoginTransitionOverlay';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -49,6 +51,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 function RootLayoutNav() {
   const theme = useTheme();
   const activeTheme = useActiveTheme();
+  const [introDone, setIntroDone] = useState(false);
   useAuthListener();
 
   useEffect(() => {
@@ -63,6 +66,8 @@ function RootLayoutNav() {
         translucent
       />
       <Stack screenOptions={{ headerShown: false }} />
+      <LoginTransitionOverlay />
+      {!introDone && <AppIntroAnimation onDone={() => setIntroDone(true)} />}
     </View>
   );
 }
