@@ -7,7 +7,9 @@ import { useTheme } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { HierarchyBadge } from '@/components/ui/HierarchyBadge';
+import { TexturedPanel } from '@/components/ui/TexturedPanel';
 import { withAlpha } from '@/lib/theme';
+import { FONTS } from '@/constants/typography';
 import { useProfileStats } from '@/hooks/useProfileStats';
 import { BADGES, getBadgeForTastings } from '@/constants/themes';
 
@@ -30,7 +32,11 @@ export default function AchievementsScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.hero}>
+          <TexturedPanel
+            style={styles.hero}
+            source={require('@/assets/hero-cigar.jpg')}
+            overlayOpacity={0.45}
+          >
             <HierarchyBadge tastingCount={tastingCount} size="lg" />
             {nextBadge ? (
               <Text style={[styles.progressText, { color: theme.textMuted }]}>
@@ -41,7 +47,7 @@ export default function AchievementsScreen() {
                 Você atingiu o nível máximo
               </Text>
             )}
-          </View>
+          </TexturedPanel>
 
           {BADGES.map((badge) => {
             const unlocked = tastingCount >= badge.minTastings;
@@ -101,9 +107,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
+  headerTitle: { fontSize: 18, fontFamily: FONTS.display },
   scroll: { padding: 20, gap: 12, paddingBottom: 40 },
-  hero: { alignItems: 'center', gap: 10, marginBottom: 12 },
+  hero: {
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
   progressText: { fontSize: 13 },
   tierRow: {
     flexDirection: 'row',

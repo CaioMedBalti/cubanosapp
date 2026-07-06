@@ -14,6 +14,8 @@ import { useTheme } from '@/store/themeStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { PostCard } from '@/components/feed/PostCard';
 import { withAlpha } from '@/lib/theme';
+import { FONTS } from '@/constants/typography';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { usePosts } from '@/hooks/usePosts';
 import { useCatalog } from '@/hooks/useCatalog';
 import { FeedPost, CigarCatalog, WhiskyCatalog } from '@/lib/firebase';
@@ -122,11 +124,10 @@ export default function FeedScreen() {
             ListHeaderComponent={<DiscoveryHeader />}
             ListEmptyComponent={
               <View style={styles.center}>
-                <Text style={[styles.emptyIcon, { color: withAlpha(theme.accent, 0.4) }]}>🍃</Text>
-                <Text style={[styles.emptyTitle, { color: theme.text }]}>Nenhum post ainda</Text>
-                <Text style={[styles.emptyHint, { color: theme.textMuted }]}>
-                  Registre uma degustação pública ou siga outros colecionadores para ver posts aqui.
-                </Text>
+                <EmptyState
+                  title="Nenhum post ainda"
+                  hint="Registre uma degustação pública ou siga outros colecionadores para ver posts aqui."
+                />
               </View>
             }
           />
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: '900',
+    fontFamily: FONTS.displayBlack,
     letterSpacing: 5,
   },
   headerRule: {

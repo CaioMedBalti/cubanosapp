@@ -13,8 +13,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/themeStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { withAlpha } from '@/lib/theme';
+import { FONTS } from '@/constants/typography';
 import { useCatalog, CatalogItem } from '@/hooks/useCatalog';
 import { DiscoverCard } from '@/components/discovery/DiscoverCard';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function DiscoverScreen() {
   const theme = useTheme();
@@ -65,15 +67,14 @@ export default function DiscoverScreen() {
           </View>
         ) : filtered.length === 0 ? (
           <View style={styles.center}>
-            <Text style={[styles.emptyIcon, { color: withAlpha(theme.accent, 0.4) }]}>🔍</Text>
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>
-              {query ? 'Sem resultados' : 'Catálogo vazio'}
-            </Text>
-            {!query && (
-              <Text style={[styles.emptyHint, { color: theme.textMuted }]}>
-                O catálogo ainda não tem produtos cadastrados.
-              </Text>
-            )}
+            <EmptyState
+              title={query ? 'Sem resultados' : 'Catálogo vazio'}
+              hint={
+                query
+                  ? 'Tente outro nome ou marca.'
+                  : 'O catálogo ainda não tem produtos cadastrados.'
+              }
+            />
           </View>
         ) : (
           <FlatList
@@ -97,7 +98,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerTitle: { fontSize: 22, fontWeight: '700' },
+  headerTitle: { fontSize: 22, fontFamily: FONTS.display },
   searchContainer: { padding: 16, paddingBottom: 8 },
   searchBar: {
     flexDirection: 'row',

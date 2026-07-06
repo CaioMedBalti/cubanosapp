@@ -1,6 +1,7 @@
 import type { ImageSourcePropType } from 'react-native';
 import type { HumidorEntry } from './firebase';
-import { CIGAR_IMAGE_MAP } from './cigarImages';
+import { CIGAR_IMAGE_MAP, CIGAR_IMAGE_CATALOG } from './cigarImages';
+import { matchCigar } from './matching';
 
 export interface CigarImageResult {
   source: ImageSourcePropType;
@@ -29,4 +30,20 @@ export function getCigarDisplayImage(
   entry: Pick<HumidorEntry, 'cigarId' | 'photoUrl'>,
 ): ImageSourcePropType | null {
   return getCigarImage(entry)?.source ?? null;
+}
+
+// Imagem para um item do catálogo Firestore (Discover/Charuto do Dia):
+// 1. imageKey direto (docs criados pelo scripts/seed-catalog.js)
+// 2. fuzzy match por marca+nome (docs antigos sem imageKey)
+// 3. null — o chamador renderiza o placeholder
+export function getCatalogItemImage(item: {
+  imageKey?: string | null;
+  name: string;
+  brand: string;
+}): ImageSourcePropType | null {
+  if (item.imageKey && CIGAR_IMAGE_MAP[item.imageKey]) {
+    return CIGAR_IMAGE_MAP[item.imageKey];
+  }
+  const match = matchCigar(item.name, item.brand, CIGAR_IMAGE_CATALOG);
+  return match.type === 'none' ? null : match.entry.image;
 }

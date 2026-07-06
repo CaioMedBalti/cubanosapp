@@ -18,24 +18,31 @@ interface PostCardProps {
 export function PostCard({ post, onPress }: PostCardProps) {
   const theme = useTheme();
   const uid = useAuthStore((s) => s.uid);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeBusy, setLikeBusy] = useState(false);
+  const [serverLiked, setServerLiked] = useState(false);
+  // Override otimista: null = sem override (segue o servidor).
+  const [pendingLiked, setPendingLiked] = useState<boolean | null>(null);
   const [commentsOpen, setCommentsOpen] = useState(false);
 
   useEffect(() => {
     if (!uid) return;
-    return subscribeIsLiked(post.id, uid, setIsLiked);
+    return subscribeIsLiked(post.id, uid, (liked) => {
+      setServerLiked(liked);
+      // Servidor alcançou o estado otimista — limpa o override.
+      setPendingLiked((p) => (p === liked ? null : p));
+    });
   }, [uid, post.id]);
 
-  const handleToggleLike = async () => {
-    if (!uid || likeBusy) return;
-    setLikeBusy(true);
-    try {
-      if (isLiked) await unlikePost(post.id, uid);
-      else await likePost(post.id, uid);
-    } finally {
-      setLikeBusy(false);
-    }
+  const isLiked = pendingLiked ?? serverLiked;
+  // Enquanto o override vigora, o likesCount do post ainda não reflete o tap.
+  const likeDelta =
+    pendingLiked === null ? 0 : pendingLiked && !serverLiked ? 1 : !pendingLiked && serverLiked ? -1 : 0;
+  const shownLikes = Math.max(0, post.likesCount + likeDelta);
+
+  const handleToggleLike = () => {
+    if (!uid) return;
+    const next = !isLiked;
+    setPendingLiked(next); // UI instantânea
+    (next ? likePost : unlikePost)(post.id, uid).catch(() => setPendingLiked(null)); // reverte em erro
   };
 
   return (
@@ -126,7 +133,7 @@ export function PostCard({ post, onPress }: PostCardProps) {
                 color={isLiked ? '#e0453f' : theme.textMuted}
               />
               <Text style={[styles.actionCount, { color: theme.textMuted }]}>
-                {post.likesCount}
+                {shownLikes}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.action} onPress={() => setCommentsOpen(true)}>

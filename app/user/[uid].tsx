@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, ListRenderItem } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, ListRenderItem, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -113,7 +113,11 @@ export default function PublicProfileScreen() {
             <View>
               <View style={styles.heroSection}>
                 <View style={[styles.avatar, { backgroundColor: withAlpha(theme.accent, 0.15), borderColor: withAlpha(theme.accent, 0.35) }]}>
-                  <Ionicons name="person" size={40} color={theme.accent} />
+                  {profile.avatarUrl ? (
+                    <Image source={{ uri: profile.avatarUrl }} style={styles.avatarImg} />
+                  ) : (
+                    <Ionicons name="person" size={40} color={theme.accent} />
+                  )}
                 </View>
                 <Text style={[styles.username, { color: theme.text }]}>{profile.username}</Text>
                 {profile.bio && (
@@ -187,7 +191,8 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: 20, paddingBottom: 40, gap: 10 },
   heroSection: { alignItems: 'center', paddingVertical: 24, gap: 10 },
-  avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 2, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  avatarImg: { width: 80, height: 80 },
   username: { fontSize: 20, fontWeight: '700' },
   bio: { fontSize: 13, textAlign: 'center', maxWidth: 260 },
   statsRow: {

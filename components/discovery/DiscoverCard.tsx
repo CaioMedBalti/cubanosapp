@@ -1,13 +1,21 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { useTheme } from '@/store/themeStore';
 import { withAlpha } from '@/lib/theme';
 import { AnilhaRating } from '@/components/ui/AnilhaRating';
+import { GenericCigarPlaceholder } from '@/components/ui/GenericCigarPlaceholder';
+import { getCatalogItemImage } from '@/lib/images';
 import type { CatalogItem } from '@/hooks/useCatalog';
 
 export function DiscoverCard({ item }: { item: CatalogItem }) {
   const theme = useTheme();
   const isWhisky = item.itemType === 'whisky';
+
+  const cigarImage = useMemo(
+    () => (isWhisky ? null : getCatalogItemImage(item as any)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [item.id, isWhisky],
+  );
 
   return (
     <View
@@ -24,7 +32,13 @@ export function DiscoverCard({ item }: { item: CatalogItem }) {
       <View style={[styles.accentBar, { backgroundColor: withAlpha(theme.accent, 0.5) }]} />
 
       <View style={[styles.iconBox, { backgroundColor: withAlpha(theme.accent, 0.1) }]}>
-        <Text style={styles.iconText}>{isWhisky ? '🥃' : '🍃'}</Text>
+        {isWhisky ? (
+          <Text style={styles.iconText}>🥃</Text>
+        ) : cigarImage ? (
+          <Image source={cigarImage} style={styles.cigarImage} resizeMode="contain" />
+        ) : (
+          <GenericCigarPlaceholder size={28} />
+        )}
       </View>
 
       <View style={styles.cardContent}>
@@ -72,11 +86,12 @@ const styles = StyleSheet.create({
   },
   accentBar: { width: 3 },
   iconBox: {
-    width: 56,
+    width: 72,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconText: { fontSize: 22 },
+  cigarImage: { width: 62, height: 84 },
   cardContent: { flex: 1, padding: 12, gap: 6 },
   brand: { fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   name: { fontSize: 16, fontWeight: '700' },

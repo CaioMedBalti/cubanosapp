@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,7 +14,9 @@ import { useTheme } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { HierarchyBadge } from '@/components/ui/HierarchyBadge';
+import { TexturedPanel } from '@/components/ui/TexturedPanel';
 import { withAlpha } from '@/lib/theme';
+import { FONTS } from '@/constants/typography';
 import { useHumidor } from '@/hooks/useHumidor';
 import { useProfileStats } from '@/hooks/useProfileStats';
 
@@ -65,7 +68,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Avatar + Badge */}
-          <View style={styles.heroSection}>
+          <TexturedPanel style={styles.heroSection} overlayOpacity={0.55}>
             <View
               style={[
                 styles.avatar,
@@ -75,7 +78,11 @@ export default function ProfileScreen() {
                 },
               ]}
             >
-              <Ionicons name="person" size={40} color={theme.accent} />
+              {profile?.avatarUrl ? (
+                <Image source={{ uri: profile.avatarUrl }} style={styles.avatarImg} />
+              ) : (
+                <Ionicons name="person" size={40} color={theme.accent} />
+              )}
             </View>
             <Text style={[styles.username, { color: theme.text }]}>
               {profile?.username ?? 'Aficionado'}
@@ -84,7 +91,7 @@ export default function ProfileScreen() {
               {profile?.bio ?? 'Explorador de charutos e whiskies premium'}
             </Text>
             <HierarchyBadge tastingCount={tastingCount} size="lg" />
-          </View>
+          </TexturedPanel>
 
           {/* Stats */}
           <View
@@ -157,7 +164,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerTitle: { fontSize: 22, fontWeight: '700' },
+  headerTitle: { fontSize: 22, fontFamily: FONTS.display },
   heroSection: {
     alignItems: 'center',
     padding: 28,
@@ -171,7 +178,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
+    overflow: 'hidden',
   },
+  avatarImg: { width: 88, height: 88 },
   username: { fontSize: 20, fontWeight: '700' },
   bio: { fontSize: 13, textAlign: 'center', maxWidth: 260 },
   statsRow: {

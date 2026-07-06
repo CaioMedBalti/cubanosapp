@@ -6,7 +6,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@/store/themeStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { UserRow } from '@/components/social/UserRow';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { withAlpha } from '@/lib/theme';
+import { FONTS } from '@/constants/typography';
 import { subscribeFollowersList, subscribeFollowingList } from '@/lib/firestore';
 import { UserProfile } from '@/lib/firebase';
 
@@ -48,9 +50,14 @@ export default function ConnectionsScreen() {
           </View>
         ) : users.length === 0 ? (
           <View style={styles.center}>
-            <Text style={[styles.emptyHint, { color: theme.textMuted }]}>
-              {isFollowers ? 'Nenhum seguidor ainda.' : 'Ainda não segue ninguém.'}
-            </Text>
+            <EmptyState
+              title={isFollowers ? 'Nenhum seguidor ainda' : 'Ainda não segue ninguém'}
+              hint={
+                isFollowers
+                  ? 'Compartilhe degustações públicas para outros colecionadores te encontrarem.'
+                  : 'Busque colecionadores pelo username e comece a seguir.'
+              }
+            />
           </View>
         ) : (
           <FlatList
@@ -78,7 +85,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
+  headerTitle: { fontSize: 18, fontFamily: FONTS.display },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emptyHint: { fontSize: 13, textAlign: 'center' },
   list: { padding: 20 },

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTheme } from '@/store/themeStore';
@@ -49,7 +49,11 @@ export function UserRow({ user }: { user: UserProfile }) {
             { backgroundColor: withAlpha(theme.accent, 0.15), borderColor: withAlpha(theme.accent, 0.35) },
           ]}
         >
-          <Ionicons name="person" size={20} color={theme.accent} />
+          {user.avatarUrl ? (
+            <Image source={{ uri: user.avatarUrl }} style={styles.avatarImg} />
+          ) : (
+            <Ionicons name="person" size={20} color={theme.accent} />
+          )}
         </View>
         <View style={styles.textCol}>
           <Text style={[styles.username, { color: theme.text }]}>{user.username}</Text>
@@ -91,7 +95,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
+  avatarImg: { width: 44, height: 44 },
   textCol: { flex: 1, gap: 2 },
   username: { fontSize: 15, fontWeight: '700' },
   bio: { fontSize: 12 },

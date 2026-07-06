@@ -7,6 +7,7 @@ import { useTheme } from '@/store/themeStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { TastingCard } from '@/components/feed/TastingCard';
 import { withAlpha } from '@/lib/theme';
+import { FONTS } from '@/constants/typography';
 import { timeAgo } from '@/lib/time';
 import { useTastings } from '@/hooks/useTastings';
 import { Tasting } from '@/lib/firebase';
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
+  headerTitle: { fontSize: 18, fontFamily: FONTS.display },
   list: { padding: 16, gap: 10, paddingBottom: 24 },
   card: {},
   center: {

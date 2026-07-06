@@ -20,6 +20,7 @@ import { useTheme } from '@/store/themeStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { withAlpha } from '@/lib/theme';
+import { FONTS } from '@/constants/typography';
 
 export default function LoginScreen() {
   const theme = useTheme();
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   logoArea: { alignItems: 'center', marginBottom: 40, gap: 4 },
   logoImage: { width: 110, height: 110, borderRadius: 24, marginBottom: 12 },
-  logoTitle: { fontSize: 36, fontWeight: '900', letterSpacing: 8 },
+  logoTitle: { fontSize: 36, fontFamily: FONTS.displayBlack, letterSpacing: 8 },
   logoSub: { fontSize: 13, letterSpacing: 3, textTransform: 'uppercase' },
   form: { borderRadius: 20, borderWidth: 1, padding: 24, gap: 16 },
   formTitle: { fontSize: 22, fontWeight: '700', marginBottom: 4 },

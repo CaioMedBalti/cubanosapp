@@ -1,99 +1,68 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Image, View, Text } from 'react-native';
+import { StyleSheet, Image, Text, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useDerivedValue,
   withTiming,
   withDelay,
-  withRepeat,
-  interpolate,
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
 import { useTheme } from '@/store/themeStore';
-import { withAlpha } from '@/lib/theme';
+import { FONTS } from '@/constants/typography';
+import { SmokeVeil } from '@/components/ui/SmokeVeil';
 
 // Tempo total com a intro visível antes do fade-out. A intro roda em paralelo
 // à resolução de auth/navegação — não bloqueia nada, só cobre a tela.
 const HOLD_MS = 1500;
 const FADE_OUT_MS = 450;
-const PUFF_CYCLE_MS = 1400;
 
 interface AppIntroAnimationProps {
   onDone: () => void;
 }
 
-interface SmokePuffProps {
-  delay: number;
-  offsetX: number;
-  size: number;
-  color: string;
-}
-
-function SmokePuff({ delay, offsetX, size, color }: SmokePuffProps) {
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    progress.value = withDelay(
-      delay,
-      withRepeat(
-        withTiming(1, { duration: PUFF_CYCLE_MS, easing: Easing.out(Easing.quad) }),
-        -1,
-        false,
-      ),
-    );
-  }, [delay, progress]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.25, 1], [0, 0.5, 0]),
-    transform: [
-      { translateY: interpolate(progress.value, [0, 1], [0, -90]) },
-      { translateX: interpolate(progress.value, [0, 1], [offsetX, offsetX * 1.8]) },
-      { scale: interpolate(progress.value, [0, 1], [0.5, 1.7]) },
-    ],
-  }));
-
-  return (
-    <Animated.View
-      style={[
-        styles.puff,
-        { width: size, height: size, borderRadius: size / 2, backgroundColor: color },
-        animatedStyle,
-      ]}
-    />
-  );
-}
-
 export function AppIntroAnimation({ onDone }: AppIntroAnimationProps) {
   const theme = useTheme();
+  const { width, height } = useWindowDimensions();
   const containerOpacity = useSharedValue(1);
+  const smokeBase = useSharedValue(0);
 
   useEffect(() => {
+    // Névoa sobe suave atrás do logo…
+    smokeBase.value = withTiming(0.4, { duration: 900, easing: Easing.out(Easing.quad) });
+    // …e a intro inteira dissolve depois do hold.
     containerOpacity.value = withDelay(
       HOLD_MS,
       withTiming(0, { duration: FADE_OUT_MS, easing: Easing.in(Easing.quad) }, (finished) => {
         if (finished) runOnJS(onDone)();
       }),
     );
-  }, [containerOpacity, onDone]);
+    // Failsafe: no web, rAF congela com a aba oculta e o callback da animação
+    // pode nunca disparar — o timer garante que a intro sai de qualquer jeito.
+    const failsafe = setTimeout(onDone, HOLD_MS + FADE_OUT_MS + 600);
+    return () => clearTimeout(failsafe);
+  }, [containerOpacity, smokeBase, onDone]);
+
+  // A fumaça acompanha o fade do container para dissolver junto.
+  const smokeIntensity = useDerivedValue(() => smokeBase.value * containerOpacity.value);
 
   const containerStyle = useAnimatedStyle(() => ({
     opacity: containerOpacity.value,
   }));
-
-  const smokeColor = withAlpha(theme.textMuted, 1);
 
   return (
     <Animated.View
       style={[styles.container, { backgroundColor: theme.background }, containerStyle]}
       pointerEvents="none"
     >
-      <View style={styles.smokeArea}>
-        <SmokePuff delay={0} offsetX={-8} size={22} color={smokeColor} />
-        <SmokePuff delay={350} offsetX={10} size={16} color={smokeColor} />
-        <SmokePuff delay={700} offsetX={-2} size={26} color={smokeColor} />
-        <SmokePuff delay={1050} offsetX={16} size={13} color={smokeColor} />
-      </View>
+      <SmokeVeil
+        intensity={smokeIntensity}
+        width={width}
+        height={height}
+        speed={1.4}
+        style={StyleSheet.absoluteFill}
+      />
       <Image
         source={require('@/assets/cubanos_logo.png')}
         style={styles.logo}
@@ -116,20 +85,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  smokeArea: {
-    // As baforadas nascem logo acima do canto superior direito do logo, onde
-    // fica a ponta acesa do charuto na arte.
-    height: 100,
-    width: 60,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginBottom: -30,
-    marginLeft: 90,
-  },
-  puff: {
-    position: 'absolute',
-    bottom: 0,
-  },
   logo: {
     width: 140,
     height: 140,
@@ -138,7 +93,7 @@ const styles = StyleSheet.create({
   title: {
     marginTop: 20,
     fontSize: 28,
-    fontWeight: '900',
+    fontFamily: FONTS.displayBlack,
     letterSpacing: 7,
   },
   subtitle: {

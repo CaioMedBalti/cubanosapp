@@ -14,6 +14,7 @@ import {
   doc,
   serverTimestamp,
   increment,
+  writeBatch,
   CollectionReference,
   Unsubscribe,
 } from 'firebase/firestore';
@@ -197,7 +198,7 @@ export async function resetExampleData(userId: string, authorName: string): Prom
 
 export async function updateUserProfile(
   uid: string,
-  updates: Partial<Pick<UserProfile, 'username' | 'bio'>>,
+  updates: Partial<Pick<UserProfile, 'username' | 'bio' | 'avatarUrl'>>,
 ): Promise<void> {
   await updateDoc(doc(db, COLLECTIONS.USERS, uid), updates);
 }
@@ -404,21 +405,22 @@ function likeDocId(postId: string, userId: string): string {
 }
 
 export async function likePost(postId: string, userId: string): Promise<void> {
-  await Promise.all([
-    setDoc(doc(db, COLLECTIONS.LIKES, likeDocId(postId, userId)), {
-      postId,
-      userId,
-      createdAt: serverTimestamp(),
-    }),
-    updateDoc(doc(db, COLLECTIONS.POSTS, postId), { likesCount: increment(1) }),
-  ]);
+  // Batch atômico: o doc de like e o contador nunca divergem.
+  const batch = writeBatch(db);
+  batch.set(doc(db, COLLECTIONS.LIKES, likeDocId(postId, userId)), {
+    postId,
+    userId,
+    createdAt: serverTimestamp(),
+  });
+  batch.update(doc(db, COLLECTIONS.POSTS, postId), { likesCount: increment(1) });
+  await batch.commit();
 }
 
 export async function unlikePost(postId: string, userId: string): Promise<void> {
-  await Promise.all([
-    deleteDoc(doc(db, COLLECTIONS.LIKES, likeDocId(postId, userId))),
-    updateDoc(doc(db, COLLECTIONS.POSTS, postId), { likesCount: increment(-1) }),
-  ]);
+  const batch = writeBatch(db);
+  batch.delete(doc(db, COLLECTIONS.LIKES, likeDocId(postId, userId)));
+  batch.update(doc(db, COLLECTIONS.POSTS, postId), { likesCount: increment(-1) });
+  await batch.commit();
 }
 
 export function subscribeIsLiked(

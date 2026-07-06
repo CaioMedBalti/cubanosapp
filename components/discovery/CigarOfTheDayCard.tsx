@@ -1,16 +1,23 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/store/themeStore';
 import { withAlpha } from '@/lib/theme';
 import { AnilhaRating } from '@/components/ui/AnilhaRating';
 import { GenericCigarPlaceholder } from '@/components/ui/GenericCigarPlaceholder';
+import { getCatalogItemImage } from '@/lib/images';
 import { getStrengthBucket, STRENGTH_GRADIENTS } from '@/constants/strength';
 import { CigarCatalog } from '@/lib/firebase';
 
 export function CigarOfTheDayCard({ cigar }: { cigar: CigarCatalog }) {
   const theme = useTheme();
   const gradientColors = STRENGTH_GRADIENTS[getStrengthBucket(cigar.strength)];
+
+  const cigarImage = useMemo(
+    () => getCatalogItemImage(cigar),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cigar.id],
+  );
 
   return (
     <View style={[styles.wrapper, { shadowColor: theme.accent }]}>
@@ -20,10 +27,16 @@ export function CigarOfTheDayCard({ cigar }: { cigar: CigarCatalog }) {
         end={{ x: 1, y: 1 }}
         style={styles.card}
       >
+        {/* PNG transparente da vitola como hero, sobre o gradiente de força */}
+        {cigarImage && (
+          <Image source={cigarImage} style={styles.heroImage} resizeMode="contain" />
+        )}
         <View style={styles.overlay}>
-          <View style={styles.iconRow}>
-            <GenericCigarPlaceholder size={40} color="#fff" />
-          </View>
+          {!cigarImage && (
+            <View style={styles.iconRow}>
+              <GenericCigarPlaceholder size={40} color="#fff" />
+            </View>
+          )}
           <View style={[styles.badge, { backgroundColor: withAlpha('#000', 0.35) }]}>
             <Text style={styles.badgeText}>CHARUTO DO DIA</Text>
           </View>
@@ -68,6 +81,15 @@ const styles = StyleSheet.create({
   },
   overlay: { gap: 6 },
   iconRow: { alignItems: 'flex-end', marginBottom: -8 },
+  heroImage: {
+    position: 'absolute',
+    right: 4,
+    top: 8,
+    width: 120,
+    height: 130,
+    transform: [{ rotate: '12deg' }],
+    opacity: 0.95,
+  },
   badge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 9,

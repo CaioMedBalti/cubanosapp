@@ -182,6 +182,9 @@ export interface CigarCatalog {
   flavorNotes: string[];
   communityRating: number;
   imageUrl?: string | null;
+  // Chave da imagem local em assets/charutos (lib/cigarImages.ts),
+  // ex.: 'Cohiba-Siglo-VI.png' — preenchida pelo scripts/seed-catalog.js.
+  imageKey?: string | null;
 }
 
 export interface WhiskyCatalog {

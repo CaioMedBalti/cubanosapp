@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -7,7 +7,9 @@ import { useTheme } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { ThemedButton } from '@/components/ui/ThemedButton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { withAlpha } from '@/lib/theme';
+import { FONTS } from '@/constants/typography';
 import { findUserByUsername, followUser, unfollowUser, subscribeIsFollowing } from '@/lib/firestore';
 import { UserProfile } from '@/lib/firebase';
 
@@ -86,9 +88,10 @@ export default function SearchScreen() {
           )}
 
           {!searching && result === null && (
-            <Text style={[styles.emptyHint, { color: theme.textMuted }]}>
-              Nenhum usuário encontrado com esse username.
-            </Text>
+            <EmptyState
+              title="Nenhum usuário encontrado"
+              hint="Confira se o username está exato — a busca não aceita variações."
+            />
           )}
 
           {!searching && result && (
@@ -97,7 +100,11 @@ export default function SearchScreen() {
             >
               <TouchableOpacity style={styles.resultInfo} onPress={() => router.push(`/user/${result.uid}`)}>
                 <View style={[styles.avatar, { backgroundColor: withAlpha(theme.accent, 0.15), borderColor: withAlpha(theme.accent, 0.35) }]}>
-                  <Ionicons name="person" size={22} color={theme.accent} />
+                  {result.avatarUrl ? (
+                    <Image source={{ uri: result.avatarUrl }} style={styles.avatarImg} />
+                  ) : (
+                    <Ionicons name="person" size={22} color={theme.accent} />
+                  )}
                 </View>
                 <View>
                   <Text style={[styles.resultName, { color: theme.text }]}>{result.username}</Text>
@@ -136,7 +143,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
+  headerTitle: { fontSize: 18, fontFamily: FONTS.display },
   content: { padding: 20, gap: 16 },
   searchBar: {
     flexDirection: 'row',
@@ -152,7 +159,8 @@ const styles = StyleSheet.create({
   emptyHint: { textAlign: 'center', fontSize: 13, marginTop: 12 },
   resultCard: { borderRadius: 14, borderWidth: 1, padding: 16, gap: 14 },
   resultInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  avatarImg: { width: 48, height: 48 },
   resultName: { fontSize: 16, fontWeight: '700' },
   resultBio: { fontSize: 12, maxWidth: 220 },
   followButton: { height: 44 },

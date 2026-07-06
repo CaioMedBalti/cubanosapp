@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import { useTheme } from '@/store/themeStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { withAlpha } from '@/lib/theme';
+import { FONTS } from '@/constants/typography';
 import { subscribeApprovedLounges } from '@/lib/firestore';
 import { haversineDistanceKm } from '@/lib/geo';
 import { Lounge } from '@/lib/firebase';
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
+  headerTitle: { fontSize: 18, fontFamily: FONTS.display },
   actionRow: { paddingHorizontal: 20, paddingTop: 14, gap: 6 },
   nearbyBtn: {
     flexDirection: 'row',

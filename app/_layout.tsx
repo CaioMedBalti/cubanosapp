@@ -4,6 +4,9 @@ import { View, StatusBar, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
+import { PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display/700Bold';
+import { PlayfairDisplay_900Black } from '@expo-google-fonts/playfair-display/900Black';
 import { useActiveTheme, useTheme } from '@/store/themeStore';
 import { THEMES, DEFAULT_THEME } from '@/constants/themes';
 import { useAuthListener } from '@/hooks/useAuthListener';
@@ -52,11 +55,19 @@ function RootLayoutNav() {
   const theme = useTheme();
   const activeTheme = useActiveTheme();
   const [introDone, setIntroDone] = useState(false);
+  const [fontsLoaded] = useFonts({
+    PlayfairDisplay_700Bold,
+    PlayfairDisplay_900Black,
+  });
   useAuthListener();
 
   useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
+  // Splash nativo segue visível até as fontes carregarem — evita flash de
+  // fonte de sistema no wordmark.
+  if (!fontsLoaded) return null;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
