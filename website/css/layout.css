@@ -1,0 +1,279 @@
+/* Estrutura da página: header, seções, cena pinned, footer */
+
+.site-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px var(--gutter);
+  background: linear-gradient(to bottom, rgba(13, 10, 8, 0.92), rgba(13, 10, 8, 0));
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+main > section {
+  position: relative;
+  padding: clamp(80px, 14vh, 150px) var(--gutter);
+}
+
+main > section > .section-head,
+#features .feature-row,
+#clube .club-cards {
+  max-width: var(--max-w);
+  margin-inline: auto;
+}
+
+/* ---------- Hero ---------- */
+
+#hero {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-image:
+    radial-gradient(120% 90% at 75% 10%, rgba(239, 159, 39, 0.05), transparent 60%),
+    linear-gradient(rgba(13, 10, 8, 0.93), rgba(13, 10, 8, 0.97)),
+    url('/assets/img/marble-dark.jpg');
+  background-size: auto, auto, cover;
+  background-color: var(--bg);
+}
+
+.hero-copy {
+  max-width: var(--max-w);
+  margin-inline: auto;
+  width: 100%;
+}
+
+.hero-copy h1,
+.hero-copy .lead,
+.hero-copy .hero-actions {
+  max-width: 54%;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 2.2em;
+}
+
+.scroll-cue {
+  position: absolute;
+  bottom: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  white-space: nowrap;
+}
+
+.scroll-cue__line {
+  width: 44px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold));
+}
+
+/* ---------- Features ---------- */
+
+.section-head {
+  margin-bottom: clamp(48px, 8vh, 90px);
+}
+
+.feature-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.9fr) 2.4fr;
+  gap: clamp(20px, 4vw, 72px);
+  padding: clamp(34px, 5vh, 52px) 0;
+  border-top: 1px solid var(--border);
+}
+
+.feature-row:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.feature-row__label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold);
+  padding-top: 0.5em;
+}
+
+.feature-row__body p {
+  color: color-mix(in srgb, var(--cream) 78%, var(--muted));
+  max-width: 36em;
+  margin-bottom: 0;
+}
+
+/* ---------- Catálogo (cena pinned com scroll horizontal) ---------- */
+
+/* Padrão (sem JS ou com movimento reduzido): faixa rolável simples.
+   O JS ativa a cena pinned adicionando .is-anim à seção. */
+#catalogo {
+  padding-inline: 0;
+}
+
+#catalogo .pin {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(28px, 6vh, 64px);
+}
+
+.section-head--pin {
+  margin: 0;
+  padding: 0 var(--gutter);
+  max-width: var(--max-w);
+  margin-inline: auto;
+  width: 100%;
+}
+
+.shelf {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--gutter) 16px;
+  display: flex;
+  gap: clamp(18px, 2.5vw, 32px);
+  overflow-x: auto;
+}
+
+#catalogo.is-anim {
+  height: 320vh;
+  padding: 0;
+}
+
+#catalogo.is-anim .pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+}
+
+#catalogo.is-anim .shelf {
+  width: max-content;
+  overflow: visible;
+  padding-bottom: 0;
+  will-change: transform;
+}
+
+/* ---------- Clube ---------- */
+
+#clube {
+  background:
+    radial-gradient(90% 70% at 20% 100%, rgba(239, 159, 39, 0.04), transparent 65%),
+    var(--bg);
+}
+
+.club-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(16px, 2.5vw, 28px);
+}
+
+/* ---------- CTA final ---------- */
+
+#cta {
+  min-height: 92vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.cta-final {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cta-final .lead {
+  margin-bottom: 2.4em;
+}
+
+.cta-final__emblem {
+  margin-bottom: 28px;
+  opacity: 0.9;
+}
+
+/* ---------- Footer ---------- */
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 40px var(--gutter) 120px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.site-footer .wordmark {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.site-footer p {
+  margin: 0 0 4px;
+}
+
+.footer-note {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+/* ---------- Responsivo ---------- */
+
+@media (max-width: 900px) {
+  .hero-copy h1,
+  .hero-copy .lead,
+  .hero-copy .hero-actions {
+    max-width: 100%;
+  }
+
+  .club-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  /* Reserva a faixa do charuto-progresso no rodapé da viewport */
+  body {
+    padding-bottom: 64px;
+  }
+
+  #hero {
+    justify-content: flex-end;
+    padding-bottom: 18vh;
+  }
+
+  .scroll-cue {
+    bottom: 84px;
+  }
+
+  .scroll-cue__hint {
+    display: none;
+  }
+
+  .feature-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
