@@ -1,5 +1,32 @@
 /* Estrutura da página: header, seções, cena pinned, footer */
 
+/* Textura global fixa (z:0), fumaça ambiente (z:1), conteúdo (z:2),
+   charuto (z:30), header (z:40) */
+#page-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(13, 10, 8, 0.93), rgba(13, 10, 8, 0.97)),
+    url('/assets/img/marble-dark.jpg');
+  background-size: auto, cover;
+  background-position: center;
+}
+
+#smoke-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+main,
+.site-footer {
+  position: relative;
+  z-index: 2;
+}
+
 .site-header {
   position: fixed;
   inset: 0 0 auto 0;
@@ -23,7 +50,8 @@ main > section {
 }
 
 main > section > .section-head,
-#features .feature-row,
+#story .story-panel,
+#story .section-head,
 #clube .club-cards {
   max-width: var(--max-w);
   margin-inline: auto;
@@ -31,18 +59,15 @@ main > section > .section-head,
 
 /* ---------- Hero ---------- */
 
+/* A textura de mármore vive no #page-backdrop (atrás da fumaça ambiente);
+   o hero só adiciona o brilho dourado, transparente. */
 #hero {
   min-height: 100vh;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background-image:
-    radial-gradient(120% 90% at 75% 10%, rgba(239, 159, 39, 0.05), transparent 60%),
-    linear-gradient(rgba(13, 10, 8, 0.93), rgba(13, 10, 8, 0.97)),
-    url('/assets/img/marble-dark.jpg');
-  background-size: auto, auto, cover;
-  background-color: var(--bg);
+  background-image: radial-gradient(120% 90% at 75% 10%, rgba(239, 159, 39, 0.05), transparent 60%);
 }
 
 .hero-copy {
@@ -85,13 +110,15 @@ main > section > .section-head,
   background: linear-gradient(to right, transparent, var(--gold));
 }
 
-/* ---------- Features ---------- */
+/* ---------- Story (features ao redor do charuto central) ---------- */
 
 .section-head {
   margin-bottom: clamp(48px, 8vh, 90px);
 }
 
-.feature-row {
+/* Padrão (sem JS, mobile ou movimento reduzido): fluxo normal, painéis como
+   linhas — o JS ativa a cena pinned adicionando .is-anim à seção. */
+.story-panel {
   display: grid;
   grid-template-columns: minmax(140px, 0.9fr) 2.4fr;
   gap: clamp(20px, 4vw, 72px);
@@ -99,11 +126,11 @@ main > section > .section-head,
   border-top: 1px solid var(--border);
 }
 
-.feature-row:last-child {
+.story-panel:last-of-type {
   border-bottom: 1px solid var(--border);
 }
 
-.feature-row__label {
+.story-panel__label {
   font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.32em;
@@ -112,10 +139,79 @@ main > section > .section-head,
   padding-top: 0.5em;
 }
 
-.feature-row__body p {
+.story-panel__body p {
   color: color-mix(in srgb, var(--cream) 78%, var(--muted));
   max-width: 36em;
   margin-bottom: 0;
+}
+
+.story-hairline {
+  display: none;
+}
+
+/* Cena pinned: charuto grande no centro, painéis flutuando aos lados */
+#story.is-anim {
+  height: 440vh;
+  padding: 0;
+}
+
+#story.is-anim .story-pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+}
+
+#story.is-anim .story-head {
+  position: absolute;
+  top: 13vh;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  margin: 0;
+  width: max-content;
+  max-width: 80vw;
+  transition: none; /* opacidade dirigida por JS, frame a frame */
+}
+
+#story.is-anim .story-panel {
+  position: absolute;
+  display: block;
+  max-width: min(440px, 36vw);
+  top: clamp(96px, 22vh, 240px);
+  padding: 0;
+  border: 0;
+  margin: 0;
+  opacity: 0;
+  will-change: opacity, transform;
+  transition: none;
+}
+
+#story.is-anim .story-panel__label {
+  margin-bottom: 0.9em;
+  padding-top: 0;
+}
+
+#story.is-anim .story-panel[data-side='left'] {
+  left: max(var(--gutter), 6vw);
+}
+
+#story.is-anim .story-panel[data-side='right'] {
+  right: max(var(--gutter), 6vw);
+}
+
+#story.is-anim .story-hairline {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100px;
+  height: 1px;
+  background: linear-gradient(to right, var(--gold), transparent);
+  transform-origin: 0 50%;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* ---------- Catálogo (cena pinned com scroll horizontal) ---------- */
@@ -172,10 +268,9 @@ main > section > .section-head,
 
 /* ---------- Clube ---------- */
 
+/* Sem backstop opaco — a fumaça ambiente (z:1) fica visível atrás */
 #clube {
-  background:
-    radial-gradient(90% 70% at 20% 100%, rgba(239, 159, 39, 0.04), transparent 65%),
-    var(--bg);
+  background: radial-gradient(90% 70% at 20% 100%, rgba(239, 159, 39, 0.04), transparent 65%);
 }
 
 .club-cards {
@@ -266,7 +361,7 @@ main > section > .section-head,
     display: none;
   }
 
-  .feature-row {
+  .story-panel {
     grid-template-columns: 1fr;
     gap: 10px;
   }

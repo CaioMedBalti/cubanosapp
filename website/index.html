@@ -22,6 +22,10 @@
 </head>
 <body>
 
+  <!-- Textura de fundo global (mármore sob véu escuro) e fumaça ambiente -->
+  <div id="page-backdrop" aria-hidden="true"></div>
+  <canvas id="smoke-bg" aria-hidden="true"></canvas>
+
   <header class="site-header">
     <a class="brand" href="#topo" aria-label="Cubanos — início">
       <img src="/assets/img/emblema-400.webp" alt="" width="28" height="36" />
@@ -44,48 +48,54 @@
         <p class="lead">Cubanos é o clube digital do charuto: humidor vivo, degustações guiadas por IA e os melhores lounges perto de você — na companhia de quem entende.</p>
         <div class="hero-actions">
           <a class="cta cta--gold" href="https://cubanosapp.vercel.app/">Entrar no clube</a>
-          <a class="cta cta--quiet" href="#features">Conhecer o app</a>
+          <a class="cta cta--quiet" href="#story">Conhecer o app</a>
         </div>
       </div>
       <p class="scroll-cue"><span class="scroll-cue__line" aria-hidden="true"></span>Role para acender<span class="scroll-cue__hint"> — o charuto queima com a leitura</span></p>
     </section>
 
-    <section id="features">
-      <div class="section-head" data-reveal>
-        <p class="eyebrow">O app</p>
-        <h2>Feito para quem coleciona de verdade.</h2>
-      </div>
-
-      <div class="feature-row" data-reveal>
-        <p class="feature-row__label">Humidor</p>
-        <div class="feature-row__body">
-          <h3>Um humidor que não esquece</h3>
-          <p>Prateleiras, quantidades e histórico de cada vitola. Você sabe o que tem, onde está e há quanto tempo descansa.</p>
+    <!-- Cena "story": no desktop o charuto fica pinado GRANDE no centro e os
+         painéis surgem ao redor dele; no mobile/sem-JS vira fluxo normal. -->
+    <section id="story">
+      <div class="story-pin">
+        <div class="section-head story-head" data-reveal>
+          <p class="eyebrow">O app</p>
+          <h2>Feito para quem coleciona de verdade.</h2>
         </div>
-      </div>
 
-      <div class="feature-row" data-reveal>
-        <p class="feature-row__label">Degustações</p>
-        <div class="feature-row__body">
-          <h3>Cada tragada vira memória</h3>
-          <p>Notas de sabor, força e momento, registradas em minutos. Do Iniciante ao Mestre da Brasa — seu paladar evolui, e o app acompanha.</p>
+        <div class="story-panel" data-panel="0" data-side="left" data-reveal>
+          <p class="story-panel__label">Humidor</p>
+          <div class="story-panel__body">
+            <h3>Um humidor que não esquece</h3>
+            <p>Prateleiras, quantidades e histórico de cada vitola. Você sabe o que tem, onde está e há quanto tempo descansa.</p>
+          </div>
         </div>
-      </div>
 
-      <div class="feature-row" data-reveal>
-        <p class="feature-row__label">Descoberta</p>
-        <div class="feature-row__body">
-          <h3>Fotografe a anilha. Nós reconhecemos.</h3>
-          <p>A IA identifica o charuto pela anilha e traz origem, fortaleza e harmonizações. Charuto do dia, marcas em destaque, coleções curadas.</p>
+        <div class="story-panel" data-panel="1" data-side="right" data-reveal>
+          <p class="story-panel__label">Degustações</p>
+          <div class="story-panel__body">
+            <h3>Cada tragada vira memória</h3>
+            <p>Notas de sabor, força e momento, registradas em minutos. Do Iniciante ao Mestre da Brasa — seu paladar evolui, e o app acompanha.</p>
+          </div>
         </div>
-      </div>
 
-      <div class="feature-row" data-reveal>
-        <p class="feature-row__label">Lounges</p>
-        <div class="feature-row__body">
-          <h3>Onde acender por perto</h3>
-          <p>Lounges e tabacarias indicados pelo clube, ordenados pela sua distância. Encontrou um novo? Sugira aos demais.</p>
+        <div class="story-panel" data-panel="2" data-side="left" data-reveal>
+          <p class="story-panel__label">Descoberta</p>
+          <div class="story-panel__body">
+            <h3>Fotografe a anilha. Nós reconhecemos.</h3>
+            <p>A IA identifica o charuto pela anilha e traz origem, fortaleza e harmonizações. Charuto do dia, marcas em destaque, coleções curadas.</p>
+          </div>
         </div>
+
+        <div class="story-panel" data-panel="3" data-side="right" data-reveal>
+          <p class="story-panel__label">Lounges</p>
+          <div class="story-panel__body">
+            <h3>Onde acender por perto</h3>
+            <p>Lounges e tabacarias indicados pelo clube, ordenados pela sua distância. Encontrou um novo? Sugira aos demais.</p>
+          </div>
+        </div>
+
+        <div class="story-hairline" aria-hidden="true"></div>
       </div>
     </section>
 
@@ -96,16 +106,16 @@
           <h2>Vitolas que você reconhece de longe.</h2>
         </div>
         <ul class="shelf" id="shelf-track">
-          <li class="shelf-card"><img src="/assets/cigars/catalog/cohiba-siglo-vi.webp" alt="Cohiba Siglo VI" width="480" height="94" loading="lazy" decoding="async" /><p class="shelf-card__name">Cohiba Siglo VI</p><p class="shelf-card__origin">Cuba</p></li>
-          <li class="shelf-card"><img src="/assets/cigars/catalog/montecristo-no2.webp" alt="Montecristo No. 2" width="480" height="108" loading="lazy" decoding="async" /><p class="shelf-card__name">Montecristo No.&nbsp;2</p><p class="shelf-card__origin">Cuba</p></li>
-          <li class="shelf-card"><img src="/assets/cigars/catalog/partagas-serie-d-no4.webp" alt="Partagás Serie D No. 4" width="480" height="118" loading="lazy" decoding="async" /><p class="shelf-card__name">Partagás Serie D No.&nbsp;4</p><p class="shelf-card__origin">Cuba</p></li>
-          <li class="shelf-card"><img src="/assets/cigars/catalog/hoyo-de-monterrey-epicure-no2.webp" alt="Hoyo de Monterrey Epicure No. 2" width="480" height="115" loading="lazy" decoding="async" /><p class="shelf-card__name">Hoyo de Monterrey Epicure No.&nbsp;2</p><p class="shelf-card__origin">Cuba</p></li>
-          <li class="shelf-card"><img src="/assets/cigars/catalog/romeo-y-julieta-wide-churchill.webp" alt="Romeo y Julieta Wide Churchill" width="480" height="112" loading="lazy" decoding="async" /><p class="shelf-card__name">Romeo y Julieta Wide Churchill</p><p class="shelf-card__origin">Cuba</p></li>
-          <li class="shelf-card"><img src="/assets/cigars/catalog/trinidad-vigia.webp" alt="Trinidad Vigía" width="480" height="120" loading="lazy" decoding="async" /><p class="shelf-card__name">Trinidad Vigía</p><p class="shelf-card__origin">Cuba</p></li>
-          <li class="shelf-card"><img src="/assets/cigars/catalog/arturo-fuente-opus-x.webp" alt="Arturo Fuente Opus X" width="480" height="105" loading="lazy" decoding="async" /><p class="shelf-card__name">Arturo Fuente Opus&nbsp;X</p><p class="shelf-card__origin">República Dominicana</p></li>
-          <li class="shelf-card"><img src="/assets/cigars/catalog/padron-1926-serie-no9.webp" alt="Padrón 1926 Serie No. 9" width="480" height="110" loading="lazy" decoding="async" /><p class="shelf-card__name">Padrón 1926 Serie No.&nbsp;9</p><p class="shelf-card__origin">Nicarágua</p></li>
-          <li class="shelf-card"><img src="/assets/cigars/catalog/davidoff-winston-churchill.webp" alt="Davidoff Winston Churchill" width="480" height="100" loading="lazy" decoding="async" /><p class="shelf-card__name">Davidoff Winston Churchill</p><p class="shelf-card__origin">República Dominicana</p></li>
-          <li class="shelf-card"><img src="/assets/cigars/catalog/liga-privada-no9.webp" alt="Liga Privada No. 9" width="480" height="112" loading="lazy" decoding="async" /><p class="shelf-card__name">Liga Privada No.&nbsp;9</p><p class="shelf-card__origin">Nicarágua</p></li>
+          <li class="shelf-card"><img src="/assets/cigars/catalog/cohiba-siglo-vi.webp" alt="Cohiba Siglo VI" width="480" height="160" loading="lazy" decoding="async" /><p class="shelf-card__name">Cohiba Siglo VI</p><p class="shelf-card__origin">Cuba</p></li>
+          <li class="shelf-card"><img src="/assets/cigars/catalog/montecristo-no2.webp" alt="Montecristo No. 2" width="480" height="160" loading="lazy" decoding="async" /><p class="shelf-card__name">Montecristo No.&nbsp;2</p><p class="shelf-card__origin">Cuba</p></li>
+          <li class="shelf-card"><img src="/assets/cigars/catalog/partagas-serie-d-no4.webp" alt="Partagás Serie D No. 4" width="480" height="160" loading="lazy" decoding="async" /><p class="shelf-card__name">Partagás Serie D No.&nbsp;4</p><p class="shelf-card__origin">Cuba</p></li>
+          <li class="shelf-card"><img src="/assets/cigars/catalog/hoyo-de-monterrey-epicure-no2.webp" alt="Hoyo de Monterrey Epicure No. 2" width="480" height="160" loading="lazy" decoding="async" /><p class="shelf-card__name">Hoyo de Monterrey Epicure No.&nbsp;2</p><p class="shelf-card__origin">Cuba</p></li>
+          <li class="shelf-card"><img src="/assets/cigars/catalog/romeo-y-julieta-wide-churchill.webp" alt="Romeo y Julieta Wide Churchill" width="480" height="160" loading="lazy" decoding="async" /><p class="shelf-card__name">Romeo y Julieta Wide Churchill</p><p class="shelf-card__origin">Cuba</p></li>
+          <li class="shelf-card"><img src="/assets/cigars/catalog/trinidad-vigia.webp" alt="Trinidad Vigía" width="480" height="160" loading="lazy" decoding="async" /><p class="shelf-card__name">Trinidad Vigía</p><p class="shelf-card__origin">Cuba</p></li>
+          <li class="shelf-card"><img src="/assets/cigars/catalog/arturo-fuente-opus-x.webp" alt="Arturo Fuente Opus X" width="480" height="160" loading="lazy" decoding="async" /><p class="shelf-card__name">Arturo Fuente Opus&nbsp;X</p><p class="shelf-card__origin">República Dominicana</p></li>
+          <li class="shelf-card"><img src="/assets/cigars/catalog/padron-1926-serie-no9.webp" alt="Padrón 1926 Serie No. 9" width="480" height="160" loading="lazy" decoding="async" /><p class="shelf-card__name">Padrón 1926 Serie No.&nbsp;9</p><p class="shelf-card__origin">Nicarágua</p></li>
+          <li class="shelf-card"><img src="/assets/cigars/catalog/davidoff-winston-churchill.webp" alt="Davidoff Winston Churchill" width="480" height="160" loading="lazy" decoding="async" /><p class="shelf-card__name">Davidoff Winston Churchill</p><p class="shelf-card__origin">República Dominicana</p></li>
+          <li class="shelf-card"><img src="/assets/cigars/catalog/liga-privada-no9.webp" alt="Liga Privada No. 9" width="480" height="160" loading="lazy" decoding="async" /><p class="shelf-card__name">Liga Privada No.&nbsp;9</p><p class="shelf-card__origin">Nicarágua</p></li>
         </ul>
       </div>
     </section>

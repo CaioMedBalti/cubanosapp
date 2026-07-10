@@ -17,6 +17,10 @@ export class BurningCigar {
 
     this.p = 0; // progresso suavizado
     this.puff = 0; // "tragada" — intensidade vinda da velocidade de scroll
+    this._flare = 0; // surto de brasa (ativação de painel / click)
+    this.warmth = 0; // hover do mouse, suavizado
+    this._warmthTarget = 0;
+    this._lastBurnX = 0;
     this.ready = false;
 
     // Cinza: acumula desde a última queda e despenca de tempos em tempos
@@ -97,6 +101,47 @@ export class BurningCigar {
     return this.spaceH / this.spaceW;
   }
 
+  // Surto de brasa (~1.2s visível): ativação de painel do story ou "tragada"
+  flare(strength = 1) {
+    this._flare = Math.min(1, Math.max(this._flare, strength));
+  }
+
+  // Derruba a cinza acumulada agora (se houver o bastante para ler como queda)
+  forceAshDrop() {
+    const raw = Math.min(this._ashBase - this._lastBurnX, 26);
+    if (this._dropT >= 1 && raw > 6) {
+      this._dropT = 0;
+      this._dropFrom = raw;
+      this._ashLenCache = raw;
+    }
+  }
+
+  setWarmth(v) {
+    this._warmthTarget = v;
+  }
+
+  // Calor combinado (scroll + flare + hover) — alimenta brasa, halo e fumaça
+  get heat() {
+    return Math.min(this.puff + this._flare + 0.35 * this.warmth, 1);
+  }
+
+  get degraded() {
+    return this._degraded;
+  }
+
+  // Ponto da brasa em coordenadas do espaço de desenho [x, y]
+  get burnPoint() {
+    const bx = Math.min(Math.max(Math.round(this._lastBurnX), 0), this.imgW - 1);
+    const yTop = this.top[bx] >= 0 ? this.top[bx] : 0;
+    const yBottom = this.bottom[bx] >= 0 ? this.bottom[bx] : this.imgH;
+    return [this._lastBurnX, this.cigarY + (yTop + yBottom) / 2];
+  }
+
+  // Rajada de fumaça na ponta (para o click/"tragada")
+  burstAtEmber(n) {
+    this.smoke.burst(n, () => this._smokeSpawnPoint(this._lastBurnX));
+  }
+
   resize(cssW, cssH, dpr) {
     const d = this._degraded ? 1 : Math.min(dpr, 2);
     this.canvas.width = Math.round(cssW * d);
@@ -113,8 +158,13 @@ export class BurningCigar {
     const puffTarget = Math.min(1, state.velocity / 1500);
     this.puff = Math.max(this.puff * Math.exp(-dt * 2), puffTarget);
 
+    // Flare decai em ~1.2s; warmth persegue o alvo (sobe rápido, desce suave)
+    this._flare *= Math.exp(-dt / 0.45);
+    const wTau = this._warmthTarget > this.warmth ? 0.25 : 0.5;
+    this.warmth += (this._warmthTarget - this.warmth) * (1 - Math.exp(-dt / wTau));
+
     // Meia-taxa quando ocioso — fumaça a 30fps é imperceptível
-    const busy = this.puff > 0.02 || this.smoke.liveCount > 0;
+    const busy = this.puff > 0.02 || this._flare > 0.02 || this.warmth > 0.02 || this.smoke.liveCount > 0;
     this._idleTime = busy ? 0 : this._idleTime + dt;
     if (this._idleTime > 3) {
       this._skipFrame = !this._skipFrame;
@@ -124,9 +174,10 @@ export class BurningCigar {
     this._watchPerformance(dt);
 
     const burnX = this._burnX();
+    this._lastBurnX = burnX;
     this._updateAsh(burnX, dt);
 
-    const rate = 5 + 35 * this.puff;
+    const rate = 5 + 35 * this.puff + 25 * this._flare + 15 * this.warmth;
     this.smoke.emit(rate, dt, () => this._smokeSpawnPoint(burnX));
     this.smoke.update(dt, t);
 
@@ -138,6 +189,7 @@ export class BurningCigar {
     if (!this.ready) return;
     this.p = progress;
     const burnX = this._burnX();
+    this._lastBurnX = burnX;
     this._ashLenCache = 12;
     this.draw(burnX, 0, true);
   }
@@ -207,9 +259,9 @@ export class BurningCigar {
     const ashLen = this._ashLenCache || 0;
     if (ashLen > 1) this._drawAsh(bx, ashLen);
 
-    // 4. Brasa na linha de queima
+    // 4. Brasa na linha de queima — intensidade responde ao calor combinado
     const flicker = isStatic ? 0.5 : 0.5 + 0.5 * Math.sin(t * 7 + Math.sin(t * 13));
-    const intensity = Math.min(0.55 + 0.25 * flicker + 0.6 * this.puff, 1);
+    const intensity = Math.min(0.55 + 0.25 * flicker + 0.6 * this.heat, 1);
     this._drawEmber(bx, intensity);
 
     // 5. Fumaça por cima de tudo
@@ -281,7 +333,7 @@ export class BurningCigar {
 
     // Halo difuso ao redor da brasa
     const halo = ctx.createRadialGradient(bx, midY, 1, bx, midY, radius * 2.4);
-    halo.addColorStop(0, `rgba(239, 159, 39, ${0.1 + 0.18 * this.puff})`);
+    halo.addColorStop(0, `rgba(239, 159, 39, ${0.1 + 0.18 * this.heat})`);
     halo.addColorStop(1, 'rgba(239, 159, 39, 0)');
     ctx.fillStyle = halo;
     ctx.fillRect(bx - radius * 2.4, midY - radius * 2.4, radius * 4.8, radius * 4.8);
