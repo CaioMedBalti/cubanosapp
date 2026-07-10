@@ -1,18 +1,24 @@
 // Fumaça: pool fixo de partículas, sprite radial pré-renderizado, blend 'lighter'.
-// Zero alocação por frame — structs recicladas por índice.
+// Zero alocação por frame — structs recicladas por índice. A advecção é feita
+// por um campo de curl noise (noise.js) — dá as volutas orgânicas da fumaça.
 // `opts` permite variar o caráter (fumaça de ponta vs plumas grandes de fundo).
 
+import { curl2 } from './noise.js';
+
 const DEFAULTS = {
-  sizeMin: 6,
-  sizeMax: 11,
-  lifeMin: 3,
-  lifeMax: 4.8,
+  sizeMin: 7,
+  sizeMax: 13,
+  lifeMin: 3.4,
+  lifeMax: 5.2,
   alphaMax: 0.4,
-  riseMin: 45,
-  riseMax: 90,
-  drift: 16,
-  buoyancy: 30,
+  riseMin: 40,
+  riseMax: 80,
+  drift: 6, // dispersão inicial pequena → sobe como coluna e o curl abre
+  buoyancy: 26,
   growth: 3,
+  noiseScale: 0.006, // frequência espacial do campo de curl
+  noiseForce: 62, // intensidade da advecção
+  drag: 0.9,
 };
 
 export class SmokeSystem {
@@ -84,10 +90,17 @@ export class SmokeSystem {
         p.alive = false;
         continue;
       }
-      // Empuxo + turbulência trigonométrica barata (sem Perlin)
-      p.vy -= o.buoyancy * dt;
-      p.vx += (Math.sin(t * 1.7 + p.seed) * 14 + Math.sin(t * 3.1 + p.seed * 2.3) * 7) * dt;
-      p.vx *= 1 - 0.4 * dt;
+      // Advecção por campo de curl (Perlin) — volutas orgânicas. Cada
+      // partícula amostra o campo na própria posição, com um leve deslocamento
+      // temporal por seed para não marcharem em sincronia.
+      const [cx, cy] = curl2(p.x * o.noiseScale, p.y * o.noiseScale, t * 0.12 + p.seed * 0.05);
+      // O curl ganha força conforme a partícula sobe e "amadurece"
+      const f = o.noiseForce * (0.35 + p.age / p.life);
+      p.vx += cx * f * dt;
+      p.vy += cy * f * dt;
+      p.vy -= o.buoyancy * dt; // empuxo
+      p.vx *= 1 - o.drag * dt;
+      p.vy *= 1 - o.drag * 0.5 * dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
     }

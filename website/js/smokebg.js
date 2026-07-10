@@ -7,14 +7,17 @@ import { SmokeSystem } from './smoke.js';
 const BIG_OPTS = {
   sizeMin: 26,
   sizeMax: 52,
-  lifeMin: 6,
-  lifeMax: 10,
-  alphaMax: 0.16,
-  riseMin: 14,
-  riseMax: 30,
-  drift: 26,
-  buoyancy: 6,
+  lifeMin: 7,
+  lifeMax: 11,
+  alphaMax: 0.15,
+  riseMin: 12,
+  riseMax: 26,
+  drift: 18,
+  buoyancy: 5,
   growth: 2,
+  noiseScale: 0.0028, // volutas largas para as plumas grandes
+  noiseForce: 42,
+  drag: 0.5,
 };
 
 export class SmokeBackground {

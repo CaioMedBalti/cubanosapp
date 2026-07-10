@@ -4,6 +4,7 @@
 
 import { SmokeSystem } from './smoke.js';
 import { clamp01, lerp, easeOutQuad } from './scroll.js';
+import { perlin3 } from './noise.js';
 
 const ALPHA_THRESHOLD = 16;
 const BAND_STOP_FRACTION = 0.42; // a queima para antes da anilha
@@ -36,6 +37,13 @@ export class BurningCigar {
 
     this._idleTime = 0;
     this._skipFrame = false;
+
+    // Brasa viva: fases independentes por "carvão" ao longo da linha de queima
+    this._coalSeed = Array.from({ length: 12 }, () => Math.random());
+    // Faíscas: partículas curtas e brilhantes que sobem na tragada/ativação
+    this._sparks = Array.from({ length: 28 }, () => ({
+      x: 0, y: 0, vx: 0, vy: 0, age: 0, life: 0, alive: false,
+    }));
   }
 
   async load(srcWebp, srcPng) {
@@ -104,6 +112,7 @@ export class BurningCigar {
   // Surto de brasa (~1.2s visível): ativação de painel do story ou "tragada"
   flare(strength = 1) {
     this._flare = Math.min(1, Math.max(this._flare, strength));
+    if (this.ready) this._emitSparks(3 + Math.round(strength * 5));
   }
 
   // Derruba a cinza acumulada agora (se houver o bastante para ler como queda)
@@ -140,6 +149,39 @@ export class BurningCigar {
   // Rajada de fumaça na ponta (para o click/"tragada")
   burstAtEmber(n) {
     this.smoke.burst(n, () => this._smokeSpawnPoint(this._lastBurnX));
+  }
+
+  _emitSparks(n) {
+    const bx = this._lastBurnX;
+    const xi = Math.min(Math.max(Math.round(bx), 0), this.imgW - 1);
+    const yTop = this.top[xi] >= 0 ? this.top[xi] : 0;
+    const yBot = this.bottom[xi] >= 0 ? this.bottom[xi] : this.imgH;
+    for (let i = 0; i < n; i++) {
+      const s = this._sparks.find((q) => !q.alive);
+      if (!s) break;
+      s.x = bx + (Math.random() - 0.5) * 6;
+      s.y = this.cigarY + yTop + Math.random() * (yBot - yTop);
+      s.vx = (Math.random() - 0.5) * 34;
+      s.vy = -(50 + Math.random() * 90);
+      s.age = 0;
+      s.life = 0.5 + Math.random() * 0.7;
+      s.alive = true;
+    }
+  }
+
+  _updateSparks(dt) {
+    for (const s of this._sparks) {
+      if (!s.alive) continue;
+      s.age += dt;
+      if (s.age >= s.life) {
+        s.alive = false;
+        continue;
+      }
+      s.vy += 70 * dt; // a gravidade puxa a faísca de volta
+      s.vx *= 1 - 0.8 * dt;
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+    }
   }
 
   resize(cssW, cssH, dpr) {
@@ -180,6 +222,10 @@ export class BurningCigar {
     const rate = 5 + 35 * this.puff + 25 * this._flare + 15 * this.warmth;
     this.smoke.emit(rate, dt, () => this._smokeSpawnPoint(burnX));
     this.smoke.update(dt, t);
+
+    // Trickle de faíscas quando a brasa está quente (scroll rápido / hover)
+    if (this.heat > 0.35 && Math.random() < this.heat * 0.4) this._emitSparks(1);
+    this._updateSparks(dt);
 
     this.draw(burnX, t);
   }
@@ -246,8 +292,15 @@ export class BurningCigar {
     // 1. Corpo não queimado (crop na fonte — sem clip path)
     ctx.drawImage(this.img, 0, 0, bx, this.imgH, 0, cy, bx, this.imgH);
 
-    // 2. Borda carbonizada: strip escura só sobre pixels do charuto
+    // 2. Rim light quente: a brasa ilumina a capa logo atrás da queima
     ctx.globalCompositeOperation = 'source-atop';
+    const rim = ctx.createLinearGradient(bx - 84, 0, bx - 6, 0);
+    rim.addColorStop(0, 'rgba(255, 176, 74, 0)');
+    rim.addColorStop(1, `rgba(255, 168, 70, ${0.28 + 0.28 * this.heat})`);
+    ctx.fillStyle = rim;
+    ctx.fillRect(bx - 84, cy, 78, this.imgH);
+
+    // 3. Borda carbonizada: strip escura só sobre pixels do charuto
     const charG = ctx.createLinearGradient(bx - 7, 0, bx, 0);
     charG.addColorStop(0, 'rgba(20, 12, 8, 0)');
     charG.addColorStop(1, 'rgba(20, 12, 8, 0.85)');
@@ -255,17 +308,42 @@ export class BurningCigar {
     ctx.fillRect(bx - 7, cy, 7, this.imgH);
     ctx.globalCompositeOperation = 'source-over';
 
-    // 3. Cinza agarrada à ponta
+    // 4. Cinza agarrada à ponta
     const ashLen = this._ashLenCache || 0;
     if (ashLen > 1) this._drawAsh(bx, ashLen);
 
-    // 4. Brasa na linha de queima — intensidade responde ao calor combinado
-    const flicker = isStatic ? 0.5 : 0.5 + 0.5 * Math.sin(t * 7 + Math.sin(t * 13));
-    const intensity = Math.min(0.55 + 0.25 * flicker + 0.6 * this.heat, 1);
-    this._drawEmber(bx, intensity);
+    // 5. Brasa na linha de queima — flicker multi-oitava (mais orgânico)
+    const flicker = isStatic
+      ? 0.5
+      : 0.55 + 0.22 * Math.sin(t * 7) + 0.13 * Math.sin(t * 17 + 1.3) + 0.1 * perlin3(t * 1.4, 3.2, 0);
+    const intensity = Math.min(0.5 + 0.28 * flicker + 0.55 * this.heat, 1);
+    this._drawEmber(bx, intensity, t, isStatic);
 
-    // 5. Fumaça por cima de tudo
-    if (!isStatic) this.smoke.draw(ctx, t);
+    // 6. Faíscas e fumaça por cima de tudo
+    if (!isStatic) {
+      this._drawSparks(ctx);
+      this.smoke.draw(ctx, t);
+    }
+  }
+
+  _drawSparks(ctx) {
+    let any = false;
+    for (const s of this._sparks) {
+      if (!s.alive) continue;
+      if (!any) {
+        ctx.globalCompositeOperation = 'lighter';
+        any = true;
+      }
+      const at = s.age / s.life;
+      const a = 1 - at;
+      const r = 1 + 1.5 * a;
+      const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, r * 2.4);
+      g.addColorStop(0, `rgba(255, ${(235 - at * 120) | 0}, ${(185 - at * 165) | 0}, ${0.9 * a})`);
+      g.addColorStop(1, 'rgba(255, 60, 0, 0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(s.x - r * 2.4, s.y - r * 2.4, r * 4.8, r * 4.8);
+    }
+    if (any) ctx.globalCompositeOperation = 'source-over';
   }
 
   _drawAsh(bx, ashLen) {
@@ -311,7 +389,7 @@ export class BurningCigar {
     }
   }
 
-  _drawEmber(bx, intensity) {
+  _drawEmber(bx, intensity, t = 0, isStatic = false) {
     const { ctx } = this;
     const xi = Math.min(Math.max(bx, 0), this.imgW - 1);
     const yTop = this.cigarY + (this.top[xi] >= 0 ? this.top[xi] : 0);
@@ -321,22 +399,45 @@ export class BurningCigar {
 
     ctx.globalCompositeOperation = 'lighter';
 
+    // Halo difuso de calor ao redor da brasa (maior e mais quente com o calor)
+    const haloR = radius * (2.4 + 0.9 * this.heat);
+    const halo = ctx.createRadialGradient(bx, midY, 1, bx, midY, haloR);
+    halo.addColorStop(0, `rgba(255, 150, 45, ${0.12 + 0.22 * this.heat})`);
+    halo.addColorStop(0.5, `rgba(239, 120, 30, ${0.05 + 0.1 * this.heat})`);
+    halo.addColorStop(1, 'rgba(239, 120, 30, 0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(bx - haloR, midY - haloR, haloR * 2, haloR * 2);
+
     // Anel: stripe vertical seguindo a altura da silhueta na linha de queima
     const g = ctx.createLinearGradient(bx - 6, 0, bx + 9, 0);
-    g.addColorStop(0, 'rgba(180, 40, 0, 0)');
-    g.addColorStop(0.35, `rgba(239, 159, 39, ${0.75 * intensity})`);
-    g.addColorStop(0.55, `rgba(255, 243, 214, ${0.9 * intensity})`);
-    g.addColorStop(0.8, `rgba(239, 159, 39, ${0.5 * intensity})`);
-    g.addColorStop(1, 'rgba(180, 40, 0, 0)');
+    g.addColorStop(0, 'rgba(140, 30, 0, 0)');
+    g.addColorStop(0.35, `rgba(226, 92, 22, ${0.7 * intensity})`);
+    g.addColorStop(0.55, `rgba(255, 226, 170, ${0.92 * intensity})`);
+    g.addColorStop(0.8, `rgba(239, 130, 34, ${0.5 * intensity})`);
+    g.addColorStop(1, 'rgba(140, 30, 0, 0)');
     ctx.fillStyle = g;
     ctx.fillRect(bx - 6, yTop - 1, 15, yBottom - yTop + 2);
 
-    // Halo difuso ao redor da brasa
-    const halo = ctx.createRadialGradient(bx, midY, 1, bx, midY, radius * 2.4);
-    halo.addColorStop(0, `rgba(239, 159, 39, ${0.1 + 0.18 * this.heat})`);
-    halo.addColorStop(1, 'rgba(239, 159, 39, 0)');
-    ctx.fillStyle = halo;
-    ctx.fillRect(bx - radius * 2.4, midY - radius * 2.4, radius * 4.8, radius * 4.8);
+    // Carvões vivos: pontos que pulsam em fases independentes ao longo da brasa
+    const n = this._coalSeed.length;
+    for (let i = 0; i < n; i++) {
+      const ph = this._coalSeed[i];
+      const fy = (i / (n - 1)) * 2 - 1; // -1..1 na vertical
+      const cyc = midY + fy * radius * 0.82;
+      const cxc = bx + (ph - 0.5) * 6;
+      const pulse = isStatic
+        ? 0.6
+        : 0.5 + 0.5 * Math.sin(t * (5 + ph * 7) + ph * 12) * (0.5 + 0.5 * perlin3(ph * 4, t * 0.7, 0));
+      const bright = Math.max(0, (0.25 + 0.75 * pulse)) * intensity;
+      if (bright < 0.04) continue;
+      const cr = 1.4 + 2.6 * bright;
+      const cg = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, cr * 2.3);
+      cg.addColorStop(0, `rgba(255, 244, 214, ${0.95 * bright})`);
+      cg.addColorStop(0.4, `rgba(255, 150, 45, ${0.7 * bright})`);
+      cg.addColorStop(1, 'rgba(200, 40, 0, 0)');
+      ctx.fillStyle = cg;
+      ctx.fillRect(cxc - cr * 2.3, cyc - cr * 2.3, cr * 4.6, cr * 4.6);
+    }
 
     ctx.globalCompositeOperation = 'source-over';
   }
