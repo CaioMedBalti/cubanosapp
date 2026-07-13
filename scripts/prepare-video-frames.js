@@ -1,7 +1,7 @@
 // Converte o vídeo do charuto queimando (assets/video/cigar-burn.mp4) na
 // sequência de frames que o site scruba com o scroll:
-//   website/assets/film/f-000.webp … f-149.webp  (1280w, q62)
-//   website/assets/film/poster.webp              (frame 0, q80 — mobile/fallback)
+//   website/assets/film/f-000.webp … f-149.webp  (1280w, q85)
+//   website/assets/film/poster.webp              (frame 0, q92 — mobile/fallback)
 //   website/assets/film/ember.json               (trajetória da brasa por frame)
 //
 // Uso:  node scripts/prepare-video-frames.js                (vídeo real; precisa de ffmpeg)
@@ -23,8 +23,8 @@ const OUT = path.join(ROOT, 'website', 'assets', 'film');
 
 const N = 150; // frames finais (progress 0..1 → frame 0..N-1)
 const OUT_W = 1280;
-const FRAME_Q = 62;
-const POSTER_Q = 80;
+const FRAME_Q = 85;
+const POSTER_Q = 92;
 
 // Detecção da brasa roda numa versão reduzida do frame (rápido e estável)
 const DETECT_W = 320;
