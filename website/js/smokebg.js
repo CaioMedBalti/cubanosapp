@@ -46,8 +46,10 @@ export class SmokeBackground {
     if (!this.enabled) return;
 
     const pt = this.film.getEmberViewport();
-    if (pt) {
-      const rate = 6 + 14 * this.fx.heat;
+    // Sem taxa de base: o vídeo já carrega fumaça real. Plumas grandes só
+    // reforçam quando há calor de verdade (scroll rápido, hover, tragada).
+    if (pt && this.fx.heat > 0.03) {
+      const rate = 14 * this.fx.heat;
       this.smoke.emit(rate, dt, () => [
         pt[0] + (Math.random() - 0.5) * 60,
         pt[1] + (Math.random() - 0.5) * 24,

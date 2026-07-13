@@ -101,8 +101,10 @@ export class Fx {
     this.warmth += (this._warmthTarget - this.warmth) * (1 - Math.exp(-dt / wTau));
 
     const pt = this.film.getEmberViewport();
-    if (pt) {
-      const rate = 2 + 40 * this.puff + 25 * this._flare + 15 * this.warmth;
+    // Sem taxa de base: o vídeo já tem fumaça real. A nossa só reforça o
+    // gesto (scroll rápido, hover, tragada) — parado, fica muda.
+    if (pt && this.heat > 0.03) {
+      const rate = 40 * this.puff + 25 * this._flare + 15 * this.warmth;
       this.smoke.emit(rate, dt, () => [pt[0] + (Math.random() - 0.5) * 8, pt[1] + (Math.random() - 0.5) * 6]);
       // Trickle de faíscas com a brasa bem quente
       if (this.heat > 0.4 && Math.random() < this.heat * 0.35) this._emitSparks(1);

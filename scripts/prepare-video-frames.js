@@ -196,13 +196,22 @@ async function main() {
 
   for (let i = 0; i < N; i++) {
     const buf = await frames[i]();
-    const img = sharp(buf).resize(OUT_W, null, { fit: 'inside', withoutEnlargement: true });
+    // Leve unsharp mask: o vídeo é 720p nativo esticado pelo navegador — isso
+    // recupera um pouco de "mordida" nas bordas sem inventar detalhe nem
+    // estourar halo em áreas planas (m1 baixo, m2 mais alto nas bordas).
+    const img = sharp(buf)
+      .resize(OUT_W, null, { fit: 'inside', withoutEnlargement: true })
+      .sharpen({ sigma: 1.0, m1: 0.5, m2: 2.0 });
     const outPath = path.join(OUT, `f-${String(i).padStart(3, '0')}.webp`);
     const info = await img.webp({ quality: FRAME_Q }).toFile(outPath);
     if (i === 0) {
       outW = info.width;
       outH = info.height;
-      await sharp(buf).resize(OUT_W, null, { fit: 'inside', withoutEnlargement: true }).webp({ quality: POSTER_Q }).toFile(path.join(OUT, 'poster.webp'));
+      await sharp(buf)
+        .resize(OUT_W, null, { fit: 'inside', withoutEnlargement: true })
+        .sharpen({ sigma: 1.0, m1: 0.5, m2: 2.0 })
+        .webp({ quality: POSTER_Q })
+        .toFile(path.join(OUT, 'poster.webp'));
     }
 
     const ember = await detectEmber(buf, prevNorm);
