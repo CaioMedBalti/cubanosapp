@@ -30,6 +30,10 @@ const POSTER_Q = 80;
 const DETECT_W = 320;
 const HOT_SCORE_MIN = 150; // 2R−G−B mínimo para um pixel contar como brasa
 const MAX_MISS_FRAC = 0.1;
+// A partir do 2º frame, só considera pixels quentes dentro deste raio (fração
+// da largura de detecção) da posição do frame anterior — sem isso, luzes bokeh
+// alaranjadas no fundo sequestram o centroide e a trajetória "pula".
+const TRACK_RADIUS_FRAC = 0.12;
 
 const isPlaceholder = process.argv.includes('--placeholder');
 
@@ -140,14 +144,21 @@ async function framesFromPlaceholder() {
 }
 
 // ---------------------------------------------------------------------------
-// Brasa: centroide ponderado dos pixels quentes (score 2R−G−B) num frame 320w
-async function detectEmber(frameBuf) {
+// Brasa: centroide ponderado dos pixels quentes (score 2R−G−B) num frame 320w.
+// `prevNorm` (coords normalizadas 0..1 do frame anterior) restringe a busca a
+// um raio ao redor dele — coerência temporal que ignora bokeh alaranjado
+// parado no fundo (teria score alto mas está longe de onde a brasa estava).
+async function detectEmber(frameBuf, prevNorm) {
   const { data, info } = await sharp(frameBuf)
     .resize(DETECT_W, null, { fit: 'inside' })
     .removeAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
   const { width, height } = info;
+  const prevX = prevNorm ? prevNorm[0] * width : null;
+  const prevY = prevNorm ? prevNorm[1] * height : null;
+  const radius = TRACK_RADIUS_FRAC * width;
+
   let sumX = 0;
   let sumY = 0;
   let sumW = 0;
@@ -155,12 +166,12 @@ async function detectEmber(frameBuf) {
     for (let x = 0; x < width; x++) {
       const o = (y * width + x) * 3;
       const score = 2 * data[o] - data[o + 1] - data[o + 2];
-      if (score > HOT_SCORE_MIN) {
-        const w = score - HOT_SCORE_MIN;
-        sumX += x * w;
-        sumY += y * w;
-        sumW += w;
-      }
+      if (score <= HOT_SCORE_MIN) continue;
+      if (prevX !== null && Math.hypot(x - prevX, y - prevY) > radius) continue;
+      const w = score - HOT_SCORE_MIN;
+      sumX += x * w;
+      sumY += y * w;
+      sumW += w;
     }
   }
   if (sumW <= 0) return null;
@@ -181,6 +192,7 @@ async function main() {
   let outH = 0;
   const points = [];
   let misses = 0;
+  let prevNorm = null;
 
   for (let i = 0; i < N; i++) {
     const buf = await frames[i]();
@@ -193,9 +205,10 @@ async function main() {
       await sharp(buf).resize(OUT_W, null, { fit: 'inside', withoutEnlargement: true }).webp({ quality: POSTER_Q }).toFile(path.join(OUT, 'poster.webp'));
     }
 
-    const ember = await detectEmber(buf);
+    const ember = await detectEmber(buf, prevNorm);
     if (ember) {
       points.push([ember.x, ember.y]);
+      prevNorm = [ember.x, ember.y];
     } else {
       points.push(null);
       misses++;
@@ -229,12 +242,14 @@ async function main() {
     }
   }
 
-  // Suaviza (média móvel, janela 5) e converte para pixels do frame de saída
+  // Suaviza (média móvel, janela 17) e converte para pixels do frame de saída.
+  // O alvo é fumaça/hairline apontando pra "região da brasa", não precisão de
+  // pixel — vale mais estabilidade do que reagir a cada flicker do carvão.
   const smooth = points.map((_, i) => {
     let sx = 0;
     let sy = 0;
     let n = 0;
-    for (let k = Math.max(0, i - 2); k <= Math.min(N - 1, i + 2); k++) {
+    for (let k = Math.max(0, i - 8); k <= Math.min(N - 1, i + 8); k++) {
       sx += points[k][0];
       sy += points[k][1];
       n++;
