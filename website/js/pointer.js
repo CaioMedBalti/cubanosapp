@@ -1,14 +1,26 @@
-// Interação de ponteiro com o charuto: hover aquece (brasa + fumaça + glow),
-// click/tap dá uma "tragada" (surto de brasa + rajada de fumaça). O palco
-// mantém pointer-events:none — o hit test roda 1× por rAF contra a pose
-// cacheada e a silhueta real do PNG, sem leitura de layout.
+// Interação de ponteiro com o charuto do filme: hover aquece (halo + fumaça +
+// cursor), click/tap dá uma "tragada" (flare + rajada de fumaça + faíscas).
+// O hit test é distância ao segmento do charuto (ponta fria → brasa), rodando
+// 1× por rAF contra a geometria cacheada do filme — sem leitura de layout.
 
-export function initPointer(stage, cigar) {
+const HIT_RADIUS = 64;
+
+function hitSegment(seg, x, y) {
+  if (!seg) return false;
+  const dx = seg.x2 - seg.x1;
+  const dy = seg.y2 - seg.y1;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 > 0 ? Math.min(Math.max(((x - seg.x1) * dx + (y - seg.y1) * dy) / len2, 0), 1) : 0;
+  const px = seg.x1 + dx * t;
+  const py = seg.y1 + dy * t;
+  return Math.hypot(x - px, y - py) <= HIT_RADIUS;
+}
+
+export function initPointer(film, fx) {
   let px = -1;
   let py = -1;
   let isTouch = false;
   let hovering = false;
-  const stageEl = document.getElementById('cigar-stage');
 
   window.addEventListener(
     'pointermove',
@@ -23,9 +35,9 @@ export function initPointer(stage, cigar) {
   window.addEventListener(
     'pointerdown',
     (e) => {
-      if (stage.hitTest(e.clientX, e.clientY)) {
-        cigar.flare(1);
-        cigar.burstAtEmber(15 + Math.round(Math.random() * 10));
+      if (hitSegment(film.getCigarSegmentViewport(), e.clientX, e.clientY)) {
+        fx.flare(1);
+        fx.burstAtEmber(15 + Math.round(Math.random() * 10));
       }
     },
     { passive: true },
@@ -33,11 +45,10 @@ export function initPointer(stage, cigar) {
 
   return {
     tick() {
-      const hit = !isTouch && px >= 0 && stage.hitTest(px, py);
+      const hit = !isTouch && px >= 0 && hitSegment(film.getCigarSegmentViewport(), px, py);
       if (hit !== hovering) {
         hovering = hit;
-        cigar.setWarmth(hit ? 1 : 0);
-        stageEl.classList.toggle('is-warm', hit);
+        fx.setWarmth(hit ? 1 : 0);
         document.body.classList.toggle('cigar-hover', hit);
       }
     },

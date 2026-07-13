@@ -14,7 +14,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png" />
   <link rel="apple-touch-icon" href="/assets/img/apple-touch-180.png" />
   <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/playfair-display-600.woff2" crossorigin />
-  <link rel="preload" as="image" href="/assets/cigars/burn-cigar@2x.webp" fetchpriority="high" />
+  <link rel="preload" as="image" href="/assets/film/poster.webp" fetchpriority="high" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/components.css" />
@@ -22,8 +22,11 @@
 </head>
 <body>
 
-  <!-- Textura de fundo global (mármore sob véu escuro) e fumaça ambiente -->
+  <!-- Camadas fixas de fundo: textura (fallback) → filme do charuto scrubado
+       pelo scroll → vinheta de legibilidade → fumaça ambiente -->
   <div id="page-backdrop" aria-hidden="true"></div>
+  <canvas id="film" aria-hidden="true"></canvas>
+  <div id="film-shade" aria-hidden="true"></div>
   <canvas id="smoke-bg" aria-hidden="true"></canvas>
 
   <header class="site-header">
@@ -34,10 +37,8 @@
     <a class="cta cta--ghost" href="https://cubanosapp.vercel.app/">Entrar no clube</a>
   </header>
 
-  <!-- O charuto que queima com o scroll: decorativo; o progresso real é espelhado abaixo. -->
-  <div id="cigar-stage" aria-hidden="true">
-    <canvas id="cigar-canvas"></canvas>
-  </div>
+  <!-- Efeitos acima do conteúdo: fumaça de 1º plano, faíscas e halo da brasa -->
+  <canvas id="fx" aria-hidden="true"></canvas>
   <div id="burn-progress" role="progressbar" aria-label="Progresso da página" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" class="visually-hidden"></div>
 
   <main id="topo">
@@ -120,7 +121,7 @@
       </div>
     </section>
 
-    <section id="clube">
+    <section id="clube" data-bg="humidor">
       <div class="section-head" data-reveal>
         <p class="eyebrow">O clube</p>
         <h2>Uma roda de fumaça,<br />não uma rede social.</h2>
@@ -142,7 +143,7 @@
       </div>
     </section>
 
-    <section id="cta">
+    <section id="cta" data-bg="lounge">
       <div class="cta-final" data-reveal>
         <img class="cta-final__emblem" src="/assets/img/emblema-400.webp" alt="" width="72" height="92" loading="lazy" />
         <h2>Até a última <em>tragada.</em></h2>

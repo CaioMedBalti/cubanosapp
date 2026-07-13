@@ -20,3 +20,33 @@ export function initReveals() {
   );
   for (const el of els) io.observe(el);
 }
+
+// Backgrounds de seção carregam só ao se aproximar (CSS background em elemento
+// below-fold carregaria no primeiro layout — o gate é a classe .bg-in). A
+// classe só entra depois que a imagem realmente carrega: enquanto os assets
+// bg-*.webp não existirem, a seção fica no gradiente e nada quebra.
+export function initLazyBackgrounds() {
+  const els = document.querySelectorAll('[data-bg]');
+  if (els.length === 0) return;
+  const activate = (el) => {
+    const img = new Image();
+    img.onload = () => el.classList.add('bg-in');
+    img.src = `/assets/img/bg-${el.dataset.bg}.webp`;
+  };
+  if (!('IntersectionObserver' in window)) {
+    for (const el of els) activate(el);
+    return;
+  }
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          io.unobserve(entry.target);
+          activate(entry.target);
+        }
+      }
+    },
+    { rootMargin: '100% 0px' },
+  );
+  for (const el of els) io.observe(el);
+}

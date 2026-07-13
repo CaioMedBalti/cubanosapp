@@ -1,7 +1,7 @@
-// Story: os painéis das features orbitam o charuto central. Cada painel é
+// Story: os painéis das features orbitam a brasa do filme. Cada painel é
 // ativado por uma sub-faixa do progresso local da seção pinned; a ativação
-// dispara um flare de brasa + queda de cinza, e uma hairline dourada liga o
-// painel ativo à linha de queima.
+// dispara um flare (halo + faíscas via Fx), e uma hairline dourada liga o
+// painel ativo à brasa do vídeo.
 
 import { clamp01 } from './scroll.js';
 
@@ -10,9 +10,9 @@ const FULL = 0.07; // meia-largura totalmente visível
 const FADE = 0.05; // rampa de fade além da faixa cheia
 
 export class Story {
-  constructor(cigar) {
-    this.cigar = cigar;
-    this.stage = null; // CigarStage — injetado depois (hairline precisa da pose)
+  constructor(film, fx) {
+    this.film = film;
+    this.fx = fx;
     this.section = document.getElementById('story');
     this.pin = this.section.querySelector('.story-pin');
     this.head = this.section.querySelector('.story-head');
@@ -76,12 +76,9 @@ export class Story {
         this.panels[i].style.opacity = String(q);
         this.panels[i].style.transform = `translate(${(side * (1 - q) * 40).toFixed(1)}px, ${((1 - q) * 16).toFixed(1)}px)`;
       }
-      // Borda de subida: o texto "toca" o charuto — flare + cinza cai
+      // Borda de subida: o texto "toca" a brasa — flare com faíscas
       const on = a > 0.5;
-      if (on && !this._wasOn[i]) {
-        this.cigar.flare(0.8);
-        this.cigar.forceAshDrop();
-      }
+      if (on && !this._wasOn[i]) this.fx.flare(0.8);
       this._wasOn[i] = on;
       if (a > activeA) {
         activeA = a;
@@ -95,7 +92,7 @@ export class Story {
   _drawHairline(idx, a) {
     // Só aparece com o painel quase assentado (âncora estável)
     const hairA = idx >= 0 ? clamp01((a - 0.85) / 0.15) * 0.6 : 0;
-    if (hairA <= 0.01 || !this.stage || !this.stage.pose) {
+    if (hairA <= 0.01 || !this.film.ready) {
       if (this._hairOn) {
         this.hairline.style.opacity = '0';
         this._hairOn = false;
@@ -114,7 +111,7 @@ export class Story {
         pinY: pinR.top,
       };
     }
-    const pt = this.stage.getBurnPointViewport();
+    const pt = this.film.getEmberViewport();
     if (!pt) return;
     const ax = this._anchor.x;
     const ay = this._anchor.y;
