@@ -50,3 +50,20 @@ export function initLazyBackgrounds() {
   );
   for (const el of els) io.observe(el);
 }
+
+// Barra de CTA fixa do mobile: aparece quando o hero sai da viewport (a CTA
+// principal deixou de estar visível) e some de volta no topo.
+export function initCtaBar() {
+  const hero = document.getElementById('hero');
+  const bar = document.querySelector('.cta-bar');
+  if (!hero || !bar || !('IntersectionObserver' in window)) return;
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        document.body.classList.toggle('cta-bar-on', !entry.isIntersecting);
+      }
+    },
+    { threshold: 0.1 },
+  );
+  io.observe(hero);
+}

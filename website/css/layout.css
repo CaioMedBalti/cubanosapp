@@ -1,7 +1,7 @@
 /* Estrutura da página: header, seções, cena pinned, footer */
 
-/* Textura global fixa (z:0), filme scrubado + vinheta (z:1), fumaça ambiente
-   (z:2), conteúdo (z:3), efeitos de 1º plano (z:30), header (z:40) */
+/* Textura global fixa (z:0), filme scrubado + vinheta (z:1), conteúdo (z:3),
+   efeitos de 1º plano (z:30), header (z:40), linha de brasa (z:50) */
 #page-backdrop {
   position: fixed;
   inset: 0;
@@ -32,25 +32,49 @@
     linear-gradient(to bottom, rgba(13, 10, 8, 0.55), rgba(13, 10, 8, 0.18) 30%, rgba(13, 10, 8, 0.18) 70%, rgba(13, 10, 8, 0.6));
 }
 
-#smoke-bg {
-  position: fixed;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-}
-
 main,
 .site-footer {
   position: relative;
   z-index: 3;
 }
 
-/* Efeitos de 1º plano (fumaça, faíscas, halo da brasa) sobre o conteúdo */
+/* Efeitos de 1º plano (faíscas, halo da brasa) sobre o conteúdo */
 #fx {
   position: fixed;
   inset: 0;
   z-index: 30;
   pointer-events: none;
+}
+
+/* Linha de brasa: o progresso de leitura queimando no topo da viewport */
+#burn-line {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: 2px;
+  pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(to right, transparent, var(--gold-dim) 55%, var(--gold));
+}
+
+#burn-line::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: #ffd9a0;
+  box-shadow: 0 0 10px 2px rgba(239, 159, 39, 0.85);
+  animation: ember-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes ember-pulse {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
 }
 
 .site-header {
@@ -60,14 +84,43 @@ main,
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
   padding: 14px var(--gutter);
   background: linear-gradient(to bottom, rgba(13, 10, 8, 0.92), rgba(13, 10, 8, 0));
+  border-bottom: 1px solid transparent;
+  transition: background-color 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+/* Depois do topo: vidro escuro com hairline — o header ganha chão */
+.site-header.is-scrolled {
+  background: rgba(13, 10, 8, 0.72);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom-color: var(--border);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.site-nav {
+  display: flex;
+  gap: clamp(20px, 3vw, 40px);
+}
+
+.site-nav a {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.25s ease;
+}
+
+.site-nav a:hover {
+  color: var(--gold);
 }
 
 main > section {
@@ -134,6 +187,12 @@ main > section > .section-head,
   width: 44px;
   height: 1px;
   background: linear-gradient(to right, transparent, var(--gold));
+  animation: cue-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes cue-breathe {
+  0%, 100% { opacity: 0.5; transform: scaleX(0.7); transform-origin: 0 50%; }
+  50% { opacity: 1; transform: scaleX(1); }
 }
 
 /* ---------- Story (features ao redor do charuto central) ---------- */
@@ -175,9 +234,10 @@ main > section > .section-head,
   display: none;
 }
 
-/* Cena pinned: charuto grande no centro, painéis flutuando aos lados */
+/* Cena pinned: painéis orbitam a brasa do filme. 340vh — o bastante para as
+   4 ativações sem a página parecer presa. */
 #story.is-anim {
-  height: 440vh;
+  height: 340vh;
   padding: 0;
 }
 
@@ -273,7 +333,7 @@ main > section > .section-head,
 }
 
 #catalogo.is-anim {
-  height: 320vh;
+  height: 260vh;
   padding: 0;
 }
 
@@ -355,24 +415,66 @@ section[data-bg] {
 
 .site-footer {
   border-top: 1px solid var(--border);
-  padding: 40px var(--gutter) 120px;
-  text-align: center;
+  padding: 56px var(--gutter) 72px;
   color: var(--muted);
   font-size: 0.85rem;
 }
 
-.site-footer .wordmark {
-  display: block;
-  margin-bottom: 10px;
+.footer-row {
+  max-width: var(--max-w);
+  margin: 0 auto 28px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.footer-nav {
+  display: flex;
+  gap: clamp(18px, 3vw, 36px);
+  flex-wrap: wrap;
+}
+
+.footer-nav a {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.25s ease;
+}
+
+.footer-nav a:hover {
+  color: var(--gold);
 }
 
 .site-footer p {
-  margin: 0 0 4px;
+  max-width: var(--max-w);
+  margin: 0 auto 4px;
 }
 
 .footer-note {
   font-size: 0.75rem;
   opacity: 0.7;
+}
+
+/* ---------- CTA fixa do mobile ---------- */
+
+/* Escondida por padrão; o breakpoint mobile + .cta-bar-on no body revelam */
+.cta-bar {
+  display: none;
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  z-index: 45;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  pointer-events: none;
 }
 
 /* ---------- Responsivo ---------- */
@@ -389,33 +491,82 @@ section[data-bg] {
   }
 }
 
-@media (max-width: 720px) {
-  /* Reserva a faixa do charuto-progresso no rodapé da viewport */
-  body {
-    padding-bottom: 64px;
+@media (max-width: 719px) {
+  /* O vídeo em retrato precisa de um véu inferior mais forte pro texto */
+  #film-shade {
+    background-image:
+      radial-gradient(140% 90% at 50% 42%, transparent 30%, rgba(13, 10, 8, 0.85) 100%),
+      linear-gradient(to bottom, rgba(13, 10, 8, 0.6), rgba(13, 10, 8, 0.22) 34%, rgba(13, 10, 8, 0.55) 62%, rgba(13, 10, 8, 0.82));
+  }
+
+  .site-nav {
+    display: none;
   }
 
   #hero {
     justify-content: flex-end;
-    padding-bottom: 18vh;
+    padding-bottom: 16vh;
   }
 
   .scroll-cue {
-    bottom: 84px;
+    bottom: 32px;
   }
 
   .scroll-cue__hint {
     display: none;
   }
 
+  /* Story em fluxo: cada painel é um card de hairline com respiro */
   .story-panel {
     grid-template-columns: 1fr;
     gap: 10px;
   }
 
+  .story-panel__label {
+    padding-top: 0;
+  }
+
+  /* Catálogo mobile: swipe nativo com snap e fade nas bordas */
+  .shelf {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+  }
+
+  .shelf::-webkit-scrollbar {
+    display: none;
+  }
+
+  .shelf-card {
+    scroll-snap-align: center;
+    width: min(78vw, 300px);
+  }
+
   .hero-actions {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .hero-actions .cta {
+    text-align: center;
+  }
+
+  /* CTA fixa: existe só no mobile e só depois do hero */
+  .cta-bar {
+    display: block;
+  }
+
+  body.cta-bar-on .cta-bar {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  /* O footer respira acima da barra */
+  .site-footer {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   }
 }

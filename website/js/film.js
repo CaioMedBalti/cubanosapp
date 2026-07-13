@@ -1,7 +1,13 @@
 // FilmScrub: o vídeo do charuto queimando como fundo fullscreen, scrubado
 // pelo scroll. Não usa <video> — desenha frames webp pré-extraídos num canvas
-// (rewind suave, sem depender de keyframes de codec). Carregamento progressivo:
-// poster → conjunto grosso (1 a cada 6) → resto em idle.
+// (rewind suave, sem depender de keyframes de codec).
+//
+// Fluidez: CROSS-FADE entre os dois frames carregados vizinhos do índice
+// fracionário — o degrau entre frames desaparece e conjuntos esparsos (mobile
+// carrega só 1 a cada 6) continuam parecendo contínuos.
+// Nitidez: canvas em device pixels (dpr ≤ 2) — sem o borrão de esticamento.
+// Carga: poster → conjunto grosso (todos os breakpoints) → fino (só desktop);
+// saveData fica no poster.
 
 import { clamp01 } from './scroll.js';
 
@@ -15,12 +21,16 @@ export class FilmScrub {
     this.frames = []; // Image | null por índice
     this.n = 0;
     this._idx = 0; // índice fracionário suavizado
-    this._drawn = -1; // último frame efetivamente desenhado
+    this._lastDraw = ''; // chave do último par desenhado (evita redraws)
     this._poster = null;
-    this._fullLoad = false;
     this.mobile = false;
     this.ready = false;
-    this._cover = { s: 1, dx: 0, dy: 0 };
+    this._dpr = 1;
+    this._cover = { s: 1, dx: 0, dy: 0 }; // em device px
+    this._loading = false;
+    this._coarseDone = false;
+    this._fineStarted = false;
+    this._saveData = navigator.connection?.saveData === true;
   }
 
   // Resolve true se o filme está utilizável (ember.json + poster carregados)
@@ -39,37 +49,35 @@ export class FilmScrub {
 
     this.ready = true;
     this.resize();
-    this._draw(this._poster);
-
-    // Mobile fica só no poster (dados); desktop carrega os frames
-    if (!this.mobile) this._startLoad();
+    if (!this._saveData) this._loadCoarse();
     return true;
-  }
-
-  _startLoad() {
-    if (this._loadStarted) return;
-    this._loadStarted = true;
-    this._loadFrames();
   }
 
   _frameUrl(i) {
     return `/assets/film/f-${String(i).padStart(3, '0')}.webp`;
   }
 
-  async _loadFrames() {
-    const saveData = navigator.connection?.saveData === true;
+  // Conjunto grosso (1 a cada 6 ≈ 1MB): scrub funcional em qualquer tela
+  async _loadCoarse() {
+    if (this._loading) return;
+    this._loading = true;
     const coarse = [];
     for (let i = 0; i < this.n; i += COARSE_STEP) coarse.push(i);
     if (!coarse.includes(this.n - 1)) coarse.push(this.n - 1);
-
-    // Conjunto grosso primeiro (scrub funcional em ~1MB), em lotes de 8
     await this._loadSet(coarse, 8);
-    if (saveData) return;
+    this._coarseDone = true;
+    this._maybeLoadFine();
+  }
 
-    const rest = [];
-    for (let i = 0; i < this.n; i++) if (!this.frames[i]) rest.push(i);
-    await this._loadSet(rest, 4);
-    this._fullLoad = true;
+  // O conjunto completo só no desktop (mobile fica no grosso + crossfade)
+  _maybeLoadFine() {
+    if (!this._coarseDone || this._fineStarted || this.mobile || this._saveData) return;
+    this._fineStarted = true;
+    (async () => {
+      const rest = [];
+      for (let i = 0; i < this.n; i++) if (!this.frames[i]) rest.push(i);
+      await this._loadSet(rest, 4);
+    })();
   }
 
   async _loadSet(indices, batch) {
@@ -88,62 +96,84 @@ export class FilmScrub {
 
   resize() {
     this.mobile = window.innerWidth < 720;
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    this._dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    this.canvas.width = Math.round(w * this._dpr);
+    this.canvas.height = Math.round(h * this._dpr);
+    this.canvas.style.width = `${w}px`;
+    this.canvas.style.height = `${h}px`;
     if (!this.meta) return;
-    // Cover-fit: crop central sem distorção
+    // Cover-fit em device px: crop central sem distorção
     const s = Math.max(this.canvas.width / this.meta.w, this.canvas.height / this.meta.h);
     this._cover = {
       s,
       dx: (this.canvas.width - this.meta.w * s) / 2,
       dy: (this.canvas.height - this.meta.h * s) / 2,
     };
-    this._drawn = -1; // força redesenho no próximo tick
-    if (this.ready && this.mobile) this._draw(this._poster);
-    // Virou desktop depois de carregar como mobile (rotação/resize)
-    if (this.ready && !this.mobile) this._startLoad();
+    this._lastDraw = '';
+    if (this.ready) this._redraw();
+    this._maybeLoadFine(); // rotação mobile→desktop completa o conjunto
   }
 
-  // Frame carregado mais próximo do alvo — nunca espera rede
-  _nearestLoaded(target) {
-    if (this.frames[target]) return target;
-    for (let d = 1; d < this.n; d++) {
-      if (target - d >= 0 && this.frames[target - d]) return target - d;
-      if (target + d < this.n && this.frames[target + d]) return target + d;
+  // Frame carregado mais próximo numa direção (-1 para trás, +1 para frente)
+  _loadedFrom(start, dir) {
+    for (let i = start; i >= 0 && i < this.n; i += dir) {
+      if (this.frames[i]) return i;
     }
     return -1;
   }
 
   tick(state, dt) {
-    if (!this.ready || this.mobile) return;
+    if (!this.ready) return;
     const target = state.progress * (this.n - 1);
     // Leve inércia — saltos de scroll viram avanço cinematográfico
     this._idx += (target - this._idx) * (1 - Math.exp(-dt * 10));
-    if (Math.abs(target - this._idx) < 0.5) this._idx = target;
-
-    const i = this._nearestLoaded(Math.round(this._idx));
-    if (i < 0 || i === this._drawn) return;
-    this._drawn = i;
-    this._draw(this.frames[i]);
+    if (Math.abs(target - this._idx) < 0.02) this._idx = target;
+    this._redraw();
   }
 
-  _draw(img) {
-    if (!img) return;
+  _redraw() {
+    // Vizinhos CARREGADOS ao redor do índice — crossfade proporcional entre
+    // eles cobre tanto o passo de 1 frame quanto os buracos do conjunto grosso
+    const lo = this._loadedFrom(Math.floor(this._idx), -1);
+    const hi = this._loadedFrom(Math.ceil(this._idx), 1);
+    if (lo < 0 && hi < 0) {
+      if (this._poster && this._lastDraw !== 'poster') {
+        this._draw(this._poster, 1);
+        this._lastDraw = 'poster';
+      }
+      return;
+    }
+    const i0 = lo >= 0 ? lo : hi;
+    const i1 = hi >= 0 ? hi : lo;
+    const a = i1 > i0 ? clamp01((this._idx - i0) / (i1 - i0)) : 0;
+    const a64 = Math.round(a * 64); // quantiza p/ não redesenhar à toa
+    const key = `${i0}:${i1}:${a64}`;
+    if (key === this._lastDraw) return;
+    this._lastDraw = key;
+    this._draw(this.frames[i0], 1);
+    if (i1 !== i0 && a64 > 0) this._draw(this.frames[i1], a64 / 64);
+  }
+
+  _draw(img, alpha) {
     const { s, dx, dy } = this._cover;
+    this.ctx.globalAlpha = alpha;
     this.ctx.drawImage(img, dx, dy, this.meta.w * s, this.meta.h * s);
+    this.ctx.globalAlpha = 1;
   }
 
-  // Ponto da brasa em coords de viewport [x, y] — fumaça, hairline, hover
+  // Ponto da brasa em coords CSS de viewport [x, y] — faíscas, hairline, hover
   getEmberViewport() {
     if (!this.ready) return null;
     const i = Math.min(Math.max(Math.round(this._idx), 0), this.n - 1);
-    const p = this.meta.points[this.mobile ? 0 : i];
+    const p = this.meta.points[i];
     const { s, dx, dy } = this._cover;
-    return [dx + p[0] * s, dy + p[1] * s];
+    return [(dx + p[0] * s) / this._dpr, (dy + p[1] * s) / this._dpr];
   }
 
-  // Segmento aproximado do charuto em viewport {x1,y1,x2,y2} para o hit test:
-  // da ponta fria (além do alcance máximo da brasa) até a brasa atual.
+  // Segmento aproximado do charuto em coords CSS {x1,y1,x2,y2} para o hit
+  // test: da ponta fria (além do alcance máximo da brasa) até a brasa atual.
   getCigarSegmentViewport() {
     const ember = this.getEmberViewport();
     if (!ember) return null;
@@ -154,17 +184,19 @@ export class FilmScrub {
     const coldX = last[0] + (last[0] - first[0]) * 0.35;
     const coldY = last[1] + (last[1] - first[1]) * 0.35;
     const { s, dx, dy } = this._cover;
-    return { x1: dx + coldX * s, y1: dy + coldY * s, x2: ember[0], y2: ember[1] };
+    return {
+      x1: (dx + coldX * s) / this._dpr,
+      y1: (dy + coldY * s) / this._dpr,
+      x2: ember[0],
+      y2: ember[1],
+    };
   }
 
   // Desenho estático por progresso (prefers-reduced-motion)
   drawStatic(progress) {
-    if (!this.ready || this.mobile) return;
+    if (!this.ready) return;
     this._idx = clamp01(progress) * (this.n - 1);
-    const i = this._nearestLoaded(Math.round(this._idx));
-    if (i < 0 || i === this._drawn) return;
-    this._drawn = i;
-    this._draw(this.frames[i]);
+    this._redraw();
   }
 }
 

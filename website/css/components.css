@@ -1,4 +1,4 @@
-/* Componentes: CTAs, cards, reveals, palco do charuto, reduced-motion */
+/* Componentes: CTAs, cards, reveals, interação, reduced-motion */
 
 /* ---------- CTAs ---------- */
 
@@ -10,16 +10,27 @@
   letter-spacing: 0.06em;
   padding: 13px 30px;
   border-radius: 2px;
-  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease,
+    transform 0.3s ease, background-position 0.5s ease, box-shadow 0.3s ease;
 }
 
+/* Dourado com sheen: um brilho que desliza no hover, como luz na anilha */
 .cta--gold {
-  background: var(--gold);
   color: #1a1209;
+  background: linear-gradient(105deg, var(--gold) 0%, var(--gold) 40%, #ffc866 50%, var(--gold) 60%, var(--gold) 100%);
+  background-size: 250% 100%;
+  background-position: 100% 0;
 }
 
 .cta--gold:hover {
-  background: var(--gold-dim);
+  background-position: 0 0;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(239, 159, 39, 0.28);
+}
+
+.cta--gold:active {
+  transform: none;
+  box-shadow: none;
 }
 
 .cta--ghost {
@@ -52,11 +63,18 @@
 
 /* ---------- Cards ---------- */
 
+/* Cards de hairline: uma linha superior que acende no hover, sem caixa */
 .club-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 4px 4px;
   padding: clamp(24px, 3vw, 36px);
+  transition: border-color 0.35s ease, background-color 0.35s ease;
+}
+
+.club-card:hover {
+  border-top-color: var(--gold-dim);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
 }
 
 .club-card p {
@@ -71,12 +89,19 @@
 }
 
 .shelf-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 28px 26px 20px;
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 4px 4px;
+  padding: 30px 26px 22px;
   width: clamp(240px, 26vw, 320px);
   flex-shrink: 0;
+  transition: border-color 0.35s ease, background-color 0.35s ease, transform 0.35s ease;
+}
+
+.shelf-card:hover {
+  border-top-color: var(--gold-dim);
+  background: color-mix(in srgb, var(--surface) 75%, transparent);
+  transform: translateY(-4px);
 }
 
 /* Imagens padronizadas no pipeline (480×160, charuto centrado) — o card só
@@ -86,13 +111,14 @@
   aspect-ratio: 3 / 1;
   height: auto;
   object-fit: contain;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.45));
 }
 
 .shelf-card__name {
   font-family: var(--font-display);
   font-size: 1.05rem;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .shelf-card__origin {
@@ -108,7 +134,7 @@
 [data-reveal] {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
   transition-delay: calc(var(--stagger-i, 0) * 90ms);
 }
 
@@ -134,6 +160,21 @@ body.cigar-hover {
   [data-reveal] {
     opacity: 1;
     transform: none;
+    transition: none;
+  }
+
+  #burn-line::after {
+    animation: none;
+  }
+
+  .scroll-cue__line {
+    animation: none;
+  }
+
+  .cta,
+  .cta-bar,
+  .shelf-card,
+  .club-card {
     transition: none;
   }
 }

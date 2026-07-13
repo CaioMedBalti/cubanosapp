@@ -158,3 +158,8 @@ img {
   outline-offset: 3px;
   border-radius: 2px;
 }
+
+::selection {
+  background: var(--gold);
+  color: #1a1209;
+}

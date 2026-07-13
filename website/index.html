@@ -23,17 +23,24 @@
 <body>
 
   <!-- Camadas fixas de fundo: textura (fallback) → filme do charuto scrubado
-       pelo scroll → vinheta de legibilidade → fumaça ambiente -->
+       pelo scroll → vinheta de legibilidade -->
   <div id="page-backdrop" aria-hidden="true"></div>
   <canvas id="film" aria-hidden="true"></canvas>
   <div id="film-shade" aria-hidden="true"></div>
-  <canvas id="smoke-bg" aria-hidden="true"></canvas>
+
+  <!-- Linha de brasa: o progresso de leitura queima no topo da viewport -->
+  <div id="burn-line" aria-hidden="true"></div>
 
   <header class="site-header">
     <a class="brand" href="#topo" aria-label="Cubanos — início">
       <img src="/assets/img/emblema-400.webp" alt="" width="28" height="36" />
       <span class="wordmark">Cubanos</span>
     </a>
+    <nav class="site-nav" aria-label="Seções">
+      <a href="#story">O app</a>
+      <a href="#catalogo">Catálogo</a>
+      <a href="#clube">O clube</a>
+    </nav>
     <a class="cta cta--ghost" href="https://cubanosapp.vercel.app/">Entrar no clube</a>
   </header>
 
@@ -154,9 +161,20 @@
   </main>
 
   <footer class="site-footer">
-    <span class="wordmark wordmark--small">Cubanos</span>
+    <div class="footer-row">
+      <span class="wordmark wordmark--small">Cubanos</span>
+      <nav class="footer-nav" aria-label="Seções (rodapé)">
+        <a href="#story">O app</a>
+        <a href="#catalogo">Catálogo</a>
+        <a href="#clube">O clube</a>
+        <a href="https://cubanosapp.vercel.app/">Entrar no clube</a>
+      </nav>
+    </div>
     <p>Colecionadores Premium · © 2026 Cubanos</p>
     <p class="footer-note">Aprecie com moderação. Produto destinado a maiores de 18 anos.</p>
   </footer>
+
+  <!-- CTA fixa do mobile: entra quando o hero sai de cena -->
+  <a class="cta cta--gold cta-bar" href="https://cubanosapp.vercel.app/">Entrar no clube</a>
 </body>
 </html>
