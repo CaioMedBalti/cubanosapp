@@ -57,12 +57,15 @@ export class FilmScrub {
     return `/assets/film/f-${String(i).padStart(3, '0')}.webp`;
   }
 
-  // Conjunto grosso (1 a cada 6 ≈ 1MB): scrub funcional em qualquer tela
+  // Conjunto grosso (1 a cada 6 ≈ 1MB): scrub funcional em qualquer tela.
+  // Conjuntos pequenos (stills de alta resolução, N ≤ 30) carregam inteiros —
+  // não há "fino" a poupar.
   async _loadCoarse() {
     if (this._loading) return;
     this._loading = true;
+    const step = this.n <= 30 ? 1 : COARSE_STEP;
     const coarse = [];
-    for (let i = 0; i < this.n; i += COARSE_STEP) coarse.push(i);
+    for (let i = 0; i < this.n; i += step) coarse.push(i);
     if (!coarse.includes(this.n - 1)) coarse.push(this.n - 1);
     await this._loadSet(coarse, 8);
     this._coarseDone = true;
@@ -163,13 +166,21 @@ export class FilmScrub {
     this.ctx.globalAlpha = 1;
   }
 
-  // Ponto da brasa em coords CSS de viewport [x, y] — faíscas, hairline, hover
+  // Ponto da brasa em coords CSS de viewport [x, y] — faíscas, hairline,
+  // hover. Interpolado pelo índice fracionário: com poucos estágios (stills),
+  // a brasa desliza junto com o crossfade em vez de pular de foto em foto.
   getEmberViewport() {
     if (!this.ready) return null;
-    const i = Math.min(Math.max(Math.round(this._idx), 0), this.n - 1);
-    const p = this.meta.points[i];
+    const idx = Math.min(Math.max(this._idx, 0), this.n - 1);
+    const i0 = Math.floor(idx);
+    const i1 = Math.min(i0 + 1, this.n - 1);
+    const f = idx - i0;
+    const p0 = this.meta.points[i0];
+    const p1 = this.meta.points[i1];
+    const px = p0[0] + (p1[0] - p0[0]) * f;
+    const py = p0[1] + (p1[1] - p0[1]) * f;
     const { s, dx, dy } = this._cover;
-    return [(dx + p[0] * s) / this._dpr, (dy + p[1] * s) / this._dpr];
+    return [(dx + px * s) / this._dpr, (dy + py * s) / this._dpr];
   }
 
   // Segmento aproximado do charuto em coords CSS {x1,y1,x2,y2} para o hit
