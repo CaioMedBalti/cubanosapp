@@ -12,6 +12,7 @@ import { THEMES, DEFAULT_THEME } from '@/constants/themes';
 import { useAuthListener } from '@/hooks/useAuthListener';
 import { AppIntroAnimation } from '@/components/ui/AppIntroAnimation';
 import { LoginTransitionOverlay } from '@/components/ui/LoginTransitionOverlay';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -76,7 +77,9 @@ function RootLayoutNav() {
         backgroundColor="transparent"
         translucent
       />
-      <Stack screenOptions={{ headerShown: false }} />
+      <ErrorBoundary>
+        <Stack screenOptions={{ headerShown: false }} />
+      </ErrorBoundary>
       <LoginTransitionOverlay />
       {!introDone && <AppIntroAnimation onDone={() => setIntroDone(true)} />}
     </View>
