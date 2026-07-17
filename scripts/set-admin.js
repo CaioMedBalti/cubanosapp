@@ -7,8 +7,10 @@
 //   node scripts/set-admin.js --key=./service-account.json --uid=<uid>
 'use strict';
 
-const admin = require('firebase-admin');
 const path = require('path');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
 
 function arg(name) {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
@@ -29,17 +31,26 @@ async function main() {
     process.exit(1);
   }
 
-  admin.initializeApp({
-    credential: admin.credential.cert(require(path.resolve(keyPath))),
-  });
+  const keyPath_ = path.resolve(keyPath);
+  let serviceAccount;
+  try {
+    serviceAccount = require(keyPath_);
+  } catch (e) {
+    console.error(`Erro ao carregar ${keyPath_}:`, e.message);
+    process.exit(1);
+  }
+
+  initializeApp({ credential: cert(serviceAccount) });
+  const auth = getAuth();
+  const db = getFirestore();
 
   if (!uid) {
-    const user = await admin.auth().getUserByEmail(email);
+    const user = await auth.getUserByEmail(email);
     uid = user.uid;
     console.log(`Auth: ${email} → uid ${uid}`);
   }
 
-  const ref = admin.firestore().collection('users').doc(uid);
+  const ref = db.collection('users').doc(uid);
   const snap = await ref.get();
   if (!snap.exists) {
     console.error(`Doc users/${uid} não existe no Firestore — o usuário já abriu o app alguma vez?`);
