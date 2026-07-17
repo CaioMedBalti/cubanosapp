@@ -206,11 +206,16 @@ export async function updateUserProfile(
   await updateDoc(doc(db, COLLECTIONS.USERS, uid), updates);
 }
 
+// publicOnly: obrigatório ao ver perfil de terceiros — as Security Rules só
+// liberam leitura de tastings alheias quando a query prova isPublic == true.
 export function subscribeTastingCount(
   userId: string,
   callback: (count: number) => void,
+  publicOnly = false,
 ): Unsubscribe {
-  const q = query(collection(db, COLLECTIONS.TASTINGS), where('userId', '==', userId));
+  const constraints = [where('userId', '==', userId)];
+  if (publicOnly) constraints.push(where('isPublic', '==', true));
+  const q = query(collection(db, COLLECTIONS.TASTINGS), ...constraints);
   return onSnapshot(
     q,
     (snap) => callback(snap.size),
