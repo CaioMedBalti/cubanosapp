@@ -13,7 +13,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useTheme } from '@/store/themeStore';
+import { useTastingSessionStore } from '@/store/tastingSessionStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { withAlpha } from '@/lib/theme';
 import { useHumidor } from '@/hooks/useHumidor';
@@ -104,6 +106,10 @@ export default function HumidorScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<HumidorEntry | null>(null);
   const viewMode = useHumidorViewStore((s) => s.viewMode);
+  // Sessão de degustação persistida (sobrevive a background/kill) — oferece retomar.
+  const activeSessionCigar = useTastingSessionStore((s) =>
+    s.startedAt !== null ? s.cigar : null,
+  );
 
   const total = items.reduce((s, i) => s + i.quantity, 0);
 
@@ -129,6 +135,23 @@ export default function HumidorScreen() {
           </View>
           <ViewModeSwitcher />
         </View>
+
+        {activeSessionCigar && (
+          <TouchableOpacity
+            style={[
+              styles.sessionBanner,
+              { backgroundColor: withAlpha(theme.accent, 0.12), borderColor: withAlpha(theme.accent, 0.35) },
+            ]}
+            onPress={() => router.push('/tastings/session')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="timer-outline" size={18} color={theme.accent} />
+            <Text style={[styles.sessionBannerText, { color: theme.text }]} numberOfLines={1}>
+              Degustação em andamento — {activeSessionCigar.name}
+            </Text>
+            <Text style={[styles.sessionBannerCta, { color: theme.accent }]}>Retomar</Text>
+          </TouchableOpacity>
+        )}
 
         {loading ? (
           <View style={styles.center}>
@@ -171,6 +194,18 @@ export default function HumidorScreen() {
             showsVerticalScrollIndicator={false}
           />
         )}
+
+        {/* FAB scanner: fluxo do double check (/scan) */}
+        <TouchableOpacity
+          style={[
+            styles.fabScan,
+            { backgroundColor: theme.card, borderColor: withAlpha(theme.accent, 0.5), bottom: fabBottom + 68 },
+          ]}
+          activeOpacity={0.8}
+          onPress={() => router.push('/scan')}
+        >
+          <Ionicons name="camera-outline" size={24} color={theme.accent} />
+        </TouchableOpacity>
 
         {/* FAB */}
         <TouchableOpacity
@@ -279,6 +314,34 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
   },
+  fabScan: {
+    position: 'absolute',
+    right: 24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+  },
+  sessionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  sessionBannerText: { flex: 1, fontSize: 13, fontWeight: '600' },
+  sessionBannerCta: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
   center: {
     flex: 1,
     alignItems: 'center',

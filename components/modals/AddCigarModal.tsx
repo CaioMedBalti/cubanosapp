@@ -27,7 +27,8 @@ import { useTheme } from '@/store/themeStore';
 import { withAlpha } from '@/lib/theme';
 import { useAuthStore } from '@/store/authStore';
 import { addHumidorItem, batchAddHumidorItems } from '@/lib/firestore';
-import { identifyCigar, parseBulkText, identifyCigarImage } from '@/lib/ai';
+import { router } from 'expo-router';
+import { identifyCigar, parseBulkText } from '@/lib/ai';
 import { uploadUserCigarPhoto, getStockPhotoUrls } from '@/lib/photos';
 import { useCigarMatching } from '@/hooks/useCigarMatching';
 import { MatchConfirmationModal } from '@/components/modals/MatchConfirmationModal';
@@ -414,14 +415,6 @@ export function AddCigarModal({ visible, onClose }: Props) {
   const [bulkItems, setBulkItems] = useState<BulkParseItem[]>([]);
   const [bulkError, setBulkError] = useState('');
 
-  // Scan mode
-  const [scannedUri, setScannedUri] = useState<string | null>(null);
-  const [scannedBase64, setScannedBase64] = useState<string | null>(null);
-  const [scannedMime, setScannedMime] = useState<'image/jpeg' | 'image/png' | 'image/webp'>('image/jpeg');
-  const [scanPhase, setScanPhase] = useState<AiPhase>('idle');
-  const [scanResult, setScanResult] = useState<CigarAIResult | null>(null);
-  const [scanError, setScanError] = useState('');
-
   // Reset all state after close animation
   useEffect(() => {
     if (!visible) {
@@ -441,11 +434,6 @@ export function AddCigarModal({ visible, onClose }: Props) {
         setBulkPhase('idle');
         setBulkItems([]);
         setBulkError('');
-        setScannedUri(null);
-        setScannedBase64(null);
-        setScanPhase('idle');
-        setScanResult(null);
-        setScanError('');
         setPendingMatch(null);
       }, 400);
       return () => clearTimeout(t);
@@ -457,11 +445,6 @@ export function AddCigarModal({ visible, onClose }: Props) {
   const singleMatch = useMemo(
     () => (singleResult ? match(singleResult.name, singleResult.brand) : null),
     [singleResult, match],
-  );
-
-  const scanMatch = useMemo(
-    () => (scanResult ? match(scanResult.name, scanResult.brand) : null),
-    [scanResult, match],
   );
 
   const saveHumidorEntry = useCallback(
@@ -503,7 +486,6 @@ export function AddCigarModal({ visible, onClose }: Props) {
     } catch {
       setPendingMatch(null);
       setSingleError('Erro ao salvar. Tente novamente.');
-      setScanError('Erro ao salvar. Tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -519,7 +501,6 @@ export function AddCigarModal({ visible, onClose }: Props) {
     } catch {
       setPendingMatch(null);
       setSingleError('Erro ao salvar. Tente novamente.');
-      setScanError('Erro ao salvar. Tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -607,84 +588,9 @@ export function AddCigarModal({ visible, onClose }: Props) {
     setBulkItems((items) => items.filter((_, i) => i !== index));
   };
 
-  // ─── Scan Handlers ────────────────────────────────────────────────────────
-
-  const handleOpenCamera = async () => {
-    try {
-      let result: ImagePicker.ImagePickerResult;
-
-      if (Platform.OS === 'web') {
-        result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images'],
-          quality: 0.7,
-          base64: true,
-        });
-      } else {
-        const { status: perm } = await ImagePicker.requestCameraPermissionsAsync();
-        if (perm !== 'granted') {
-          setScanError('Permissão de câmera negada.');
-          return;
-        }
-        result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ['images'],
-          quality: 0.7,
-          base64: true,
-          allowsEditing: true,
-          aspect: [4, 3],
-        });
-      }
-
-      if (!result.canceled && result.assets?.[0]) {
-        const asset = result.assets[0];
-        setScannedUri(asset.uri);
-        setScannedBase64(asset.base64 ?? null);
-        const mime = (asset.mimeType ?? 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/webp';
-        setScannedMime(mime);
-        setScanPhase('idle');
-        setScanResult(null);
-        setScanError('');
-      }
-    } catch {
-      setScanError('Não foi possível abrir a câmera.');
-    }
-  };
-
-  const handleIdentifyScan = async () => {
-    if (!scannedBase64) return;
-    setScanPhase('loading');
-    setScanError('');
-    try {
-      const result = await identifyCigarImage(scannedBase64, scannedMime);
-      setScanResult(result);
-      setScanPhase('done');
-    } catch (e: unknown) {
-      setScanError(e instanceof Error ? e.message : 'Erro ao identificar pela imagem.');
-      setScanPhase('error');
-    }
-  };
-
-  const handleSaveScan = async () => {
-    if (!scanResult || !uid) return;
-    setSaving(true);
-    try {
-      const result = match(scanResult.name, scanResult.brand);
-      if (result.type === 'exact') {
-        await saveHumidorEntry(scanResult, result.entry.key, false);
-        handleClose();
-      } else if (result.type === 'fuzzy') {
-        setPendingMatch({ result: scanResult, candidate: result.entry, confidence: result.confidence });
-      } else {
-        await saveHumidorEntry(scanResult, null, true);
-        handleClose();
-      }
-    } catch {
-      setScanError('Erro ao salvar. Tente novamente.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   // ─── Render ───────────────────────────────────────────────────────────────
+  // (O scanner por foto saiu deste modal: vive nas rotas /scan, com double
+  // check persistido na coleção scans.)
 
   const sheetPaddingBottom = Math.max(insets.bottom, 16);
 
@@ -985,111 +891,32 @@ export function AddCigarModal({ visible, onClose }: Props) {
                   </>
                 )}
 
-                {/* ── Scan Sub-tab ── */}
+                {/* ── Scan Sub-tab: CTA para o fluxo do scanner (double check) ──
+                    A identificação por foto vive em /scan — cada tentativa é
+                    registrada e a vitola passa pela confirmação "É esse mesmo?". */}
                 {importTab === 'scan' && (
-                  <>
-                    <TouchableOpacity
-                      style={[
-                        styles.cameraBtn,
-                        {
-                          borderColor: withAlpha(theme.accent, 0.4),
-                          backgroundColor: withAlpha(theme.accent, 0.06),
-                        },
-                      ]}
-                      onPress={handleOpenCamera}
-                      activeOpacity={0.8}
-                    >
-                      {scannedUri ? (
-                        <Image source={{ uri: scannedUri }} style={styles.previewImage} />
-                      ) : (
-                        <>
-                          <Ionicons name="camera-outline" size={36} color={theme.accent} />
-                          <Text style={[styles.cameraBtnText, { color: theme.textMuted }]}>
-                            {Platform.OS === 'web' ? 'Selecionar foto da anilha' : 'Fotografar anilha'}
-                          </Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
-
-                    {scannedUri && (
-                      <TouchableOpacity onPress={handleOpenCamera} style={styles.retryBtn}>
-                        <Text style={[styles.retryText, { color: theme.textMuted }]}>
-                          Trocar foto ↩
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-
-                    {scannedBase64 && scanPhase !== 'done' && (
-                      <TouchableOpacity
-                        style={[
-                          styles.aiBtn,
-                          {
-                            backgroundColor:
-                              scanPhase !== 'loading'
-                                ? theme.accent
-                                : withAlpha(theme.accent, 0.3),
-                          },
-                        ]}
-                        onPress={handleIdentifyScan}
-                        disabled={scanPhase === 'loading'}
-                        activeOpacity={0.8}
-                      >
-                        {scanPhase === 'loading' ? (
-                          <LoadingDots />
-                        ) : (
-                          <>
-                            <Ionicons name="sparkles-outline" size={16} color="#000" />
-                            <Text style={styles.aiBtnText}>Identificar com IA</Text>
-                          </>
-                        )}
-                      </TouchableOpacity>
-                    )}
-
-                    {scanPhase === 'error' && (
-                      <Text style={styles.errorText}>{scanError}</Text>
-                    )}
-
-                    {scanPhase === 'done' && scanResult && (
-                      <>
-                        <CigarPreviewCard result={scanResult} />
-
-                        {scanMatch?.type === 'exact' ? (
-                          <Text style={[styles.catalogMatchText, { color: theme.accent }]}>
-                            ✓ Imagem do catálogo encontrada
-                          </Text>
-                        ) : (
-                          uid && (
-                            <PhotoPickerSection
-                              uid={uid}
-                              selectedPhotoUrl={selectedPhotoUrl}
-                              onPhotoSelected={setSelectedPhotoUrl}
-                            />
-                          )
-                        )}
-
-                        <QuantityStepper value={quantity} onChange={setQuantity} />
-                        <StatusPicker value={status} onChange={setStatus} />
-                        <AdvancedHumidorFields value={advancedFields} onChange={setAdvancedFields} />
-
-                        <TouchableOpacity
-                          style={[
-                            styles.saveBtn,
-                            { backgroundColor: theme.accent },
-                            saving && styles.saveBtnDisabled,
-                          ]}
-                          onPress={handleSaveScan}
-                          disabled={saving}
-                          activeOpacity={0.85}
-                        >
-                          {saving ? (
-                            <ActivityIndicator color="#000" />
-                          ) : (
-                            <Text style={styles.saveBtnText}>Adicionar ao Humidor</Text>
-                          )}
-                        </TouchableOpacity>
-                      </>
-                    )}
-                  </>
+                  <TouchableOpacity
+                    style={[
+                      styles.cameraBtn,
+                      {
+                        borderColor: withAlpha(theme.accent, 0.4),
+                        backgroundColor: withAlpha(theme.accent, 0.06),
+                      },
+                    ]}
+                    onPress={() => {
+                      handleClose();
+                      router.push('/scan');
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="camera-outline" size={36} color={theme.accent} />
+                    <Text style={[styles.cameraBtnText, { color: theme.textMuted }]}>
+                      Abrir o scanner de charutos
+                    </Text>
+                    <Text style={[styles.cameraBtnHint, { color: withAlpha(theme.textMuted, 0.8) }]}>
+                      Fotografe a anilha, confirme a vitola e avalie a experiência
+                    </Text>
+                  </TouchableOpacity>
                 )}
               </View>
             )}
@@ -1396,10 +1223,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  previewImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+  cameraBtnHint: {
+    fontSize: 12,
+    textAlign: 'center',
+    paddingHorizontal: 24,
   },
 
   // Photo Picker

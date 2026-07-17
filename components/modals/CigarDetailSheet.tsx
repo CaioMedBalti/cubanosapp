@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import {
   Modal,
   View,
@@ -15,11 +15,15 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useTheme } from '@/store/themeStore';
 import { withAlpha } from '@/lib/theme';
 import { getCigarImage } from '@/lib/images';
 import { GenericCigarPlaceholder } from '@/components/ui/GenericCigarPlaceholder';
 import { getStrengthBucket, STRENGTH_GRADIENTS, NEUTRAL_GRADIENT } from '@/constants/strength';
+import { getCigars } from '@/lib/firestore';
+import { matchCigar } from '@/lib/matching';
+import { useTastingSessionStore } from '@/store/tastingSessionStore';
 import type { HumidorEntry } from '@/lib/firebase';
 
 const STATUS_LABEL: Record<HumidorEntry['status'], string> = {
@@ -44,6 +48,8 @@ export function CigarDetailSheet({ item, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(700)).current;
   const visible = item !== null;
+  const startSession = useTastingSessionStore((s) => s.start);
+  const [startingSession, setStartingSession] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -66,6 +72,32 @@ export function CigarDetailSheet({ item, onClose }: Props) {
   }, [slideAnim, onClose]);
 
   if (!item) return null;
+
+  // Degustação ao vivo a partir do humidor: tenta linkar a vitola do catálogo
+  // Firestore (id real + smokeTimeMin para a sugestão de terços); sem match,
+  // a sessão roda mesmo assim com id null.
+  const handleStartTasting = async () => {
+    if (startingSession) return;
+    setStartingSession(true);
+    try {
+      let catalogCigar = null;
+      try {
+        const catalog = await getCigars();
+        const m = matchCigar(item.cigarName, item.brand, catalog);
+        catalogCigar = m.type !== 'none' ? m.entry : null;
+      } catch { /* offline/erro: segue sem link de catálogo */ }
+      startSession({
+        id: catalogCigar?.id ?? null,
+        name: item.cigarName,
+        brand: item.brand,
+        smokeTimeMin: catalogCigar?.smokeTimeMin,
+      });
+      onClose();
+      router.push('/tastings/session');
+    } finally {
+      setStartingSession(false);
+    }
+  };
 
   const sheetPaddingBottom = Math.max(insets.bottom, 16);
   const cigarImage = getCigarImage(item);
@@ -185,6 +217,19 @@ export function CigarDetailSheet({ item, onClose }: Props) {
                 </Text>
               </View>
             </View>
+
+            {/* Degustação ao vivo pelos três terços */}
+            <TouchableOpacity
+              style={[styles.tastingBtn, { backgroundColor: theme.accent }]}
+              onPress={handleStartTasting}
+              disabled={startingSession}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="play" size={16} color="#000" />
+              <Text style={styles.tastingBtnText}>
+                {startingSession ? 'Preparando…' : 'Iniciar degustação'}
+              </Text>
+            </TouchableOpacity>
 
             {/* Detalhes de compra — só renderiza se algum campo existir */}
             {(item.purchaseType ||
@@ -428,5 +473,19 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     paddingVertical: 20,
+  },
+  tastingBtn: {
+    height: 48,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 20,
+  },
+  tastingBtnText: {
+    color: '#000',
+    fontWeight: '800',
+    fontSize: 14,
   },
 });

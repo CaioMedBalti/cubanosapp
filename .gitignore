@@ -35,6 +35,11 @@ yarn-error.*
 .env.*
 .env*.local
 
+# anotações locais com credenciais (nunca commitar)
+API AI Chat.txt
+Code Firebase Caio.txt
+.git-havana/
+
 # Firebase service-account keys (used only by scripts/reset-example-data.js, never committed)
 service-account*.json
 *serviceAccountKey*.json

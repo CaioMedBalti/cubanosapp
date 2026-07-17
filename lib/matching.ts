@@ -1,5 +1,3 @@
-import type { CigarCatalogEntry } from './cigarImages';
-
 export function normalizeString(s: string): string {
   return s
     .normalize('NFD')
@@ -43,19 +41,21 @@ export function similarityScore(a: string, b: string): number {
 // Confiança mínima para considerar um match "fuzzy" (abaixo disso, sem match).
 export const FUZZY_MATCH_THRESHOLD = 0.72;
 
-export type MatchResult =
-  | { type: 'exact'; entry: CigarCatalogEntry }
-  | { type: 'fuzzy'; entry: CigarCatalogEntry; confidence: number }
+// Genérico: funciona tanto sobre o catálogo local de imagens (CigarCatalogEntry)
+// quanto sobre a coleção cigars do Firestore (CigarCatalog) — só usa name/brand.
+export type MatchResult<T extends { name: string; brand: string }> =
+  | { type: 'exact'; entry: T }
+  | { type: 'fuzzy'; entry: T; confidence: number }
   | { type: 'none' };
 
-export function matchCigar(
+export function matchCigar<T extends { name: string; brand: string }>(
   name: string,
   brand: string,
-  catalog: CigarCatalogEntry[],
-): MatchResult {
+  catalog: T[],
+): MatchResult<T> {
   const inputCombined = normalizeString(`${brand} ${name}`);
 
-  let best: { entry: CigarCatalogEntry; score: number } | null = null;
+  let best: { entry: T; score: number } | null = null;
 
   for (const entry of catalog) {
     // O catálogo local às vezes já inclui a marca dentro de `name`

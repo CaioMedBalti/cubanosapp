@@ -41,7 +41,7 @@ export default function LoginScreen() {
       // O overlay de vídeo sobe na frente enquanto a Home monta por baixo;
       // quando o clipe termina, o fade revela a tela já carregada.
       startTransition();
-      router.replace('/(tabs)/');
+      router.replace('/(tabs)');
     } catch (e: any) {
       setError('E-mail ou senha incorretos.');
     } finally {

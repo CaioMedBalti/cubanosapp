@@ -27,8 +27,11 @@ import {
   HumidorEntry,
   UserProfile,
   Tasting,
+  TastingPhase,
   Comment,
   Lounge,
+  Scan,
+  Contribution,
 } from './firebase';
 
 // ─── Feed (following-based) ────────────────────────────────────────────────────
@@ -303,26 +306,51 @@ export interface LogTastingInput {
   itemBrand?: string;
   authorName: string;
   avatarUrl?: string | null;
-  rating: 1 | 2 | 3 | 4 | 5;
+  // Ao menos uma das duas escalas é obrigatória. Quando rating10 vem, o
+  // rating 1–5 do feed é derivado aqui — callers novos não se preocupam.
+  rating?: 1 | 2 | 3 | 4 | 5;
+  rating10?: number;
   notes?: string | null;
   flavorNotes?: string[];
   isPublic: boolean;
+  // Data da fumada (pode ser retroativa); default agora.
+  date?: string;
+  // Fluxo do scanner / degustação ao vivo.
+  scanId?: string | null;
+  photoUrl?: string | null;
+  smokeMode?: 'quick' | 'live';
+  durationSec?: number;
+  phases?: TastingPhase[];
+}
+
+function deriveRating5(input: LogTastingInput): 1 | 2 | 3 | 4 | 5 {
+  if (input.rating10 != null) {
+    return Math.min(5, Math.max(1, Math.round(input.rating10 / 2))) as 1 | 2 | 3 | 4 | 5;
+  }
+  return input.rating ?? 3;
 }
 
 export async function logTasting(
   input: LogTastingInput,
 ): Promise<{ tastingId: string; postId: string | null }> {
+  const rating = deriveRating5(input);
   const tasting: Omit<Tasting, 'id'> = {
     userId: input.userId,
     cigarId: input.cigarId ?? null,
     whiskyId: input.whiskyId ?? null,
     itemName: input.itemName,
     itemBrand: input.itemBrand,
-    rating: input.rating,
+    rating,
+    rating10: input.rating10,
     notes: input.notes ?? null,
     flavorNotes: input.flavorNotes ?? [],
-    date: new Date().toISOString(),
+    date: input.date ?? new Date().toISOString(),
     isPublic: input.isPublic,
+    scanId: input.scanId ?? null,
+    photoUrl: input.photoUrl ?? null,
+    smokeMode: input.smokeMode,
+    durationSec: input.durationSec,
+    phases: input.phases,
   };
 
   const [tastingRef, postRef] = await Promise.all([
@@ -335,7 +363,7 @@ export async function logTasting(
           caption: input.notes ?? '',
           cigarName: input.cigarId ? input.itemName : undefined,
           whiskyName: input.whiskyId ? input.itemName : undefined,
-          rating: input.rating,
+          rating,
           likesCount: 0,
           commentsCount: 0,
           createdAt: serverTimestamp(),
@@ -573,4 +601,147 @@ export async function findUserByUsername(username: string): Promise<UserProfile 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, COLLECTIONS.USERS, uid));
   return snap.exists() ? ({ uid: snap.id, ...snap.data() } as UserProfile) : null;
+}
+
+// ─── Scans (double check do scanner) ─────────────────────────────────────────
+// O doc nasce como 'abandoned' assim que a IA responde — se o usuário fechar o
+// app antes de confirmar, o registro já existe com o desfecho certo. Desfechos
+// reais são updates via resolveScan. Campos que as Security Rules comparam com
+// null são gravados como null explícito (ignoreUndefinedProperties descartaria
+// undefined e a regra `== null` falharia com o campo ausente).
+
+export interface CreateScanInput {
+  userId: string;
+  photoUrl: string | null;
+  suggestedCigarId: string | null;
+  suggestedName?: string;
+  suggestedBrand?: string;
+  aiGuess: Scan['aiGuess'];
+  confidence: number;
+}
+
+export async function createScan(input: CreateScanInput): Promise<string> {
+  const scan: Omit<Scan, 'id'> = {
+    userId: input.userId,
+    photoUrl: input.photoUrl,
+    suggestedCigarId: input.suggestedCigarId,
+    suggestedName: input.suggestedName,
+    suggestedBrand: input.suggestedBrand,
+    aiGuess: input.aiGuess,
+    confidence: input.confidence,
+    result: 'abandoned',
+    confirmedCigarId: null,
+    trusted: false,
+    createdAt: new Date().toISOString(),
+    resolvedAt: null,
+  };
+  const ref = await addDoc(collection(db, COLLECTIONS.SCANS), scan);
+  return ref.id;
+}
+
+// trusted é derivado aqui (e validado nas rules) — o front nunca decide.
+export async function resolveScan(
+  scanId: string,
+  result: 'confirmed' | 'corrected' | 'not_found',
+  confirmedCigarId?: string,
+): Promise<void> {
+  const trusted = result === 'confirmed' || result === 'corrected';
+  await updateDoc(doc(db, COLLECTIONS.SCANS, scanId), {
+    result,
+    trusted,
+    confirmedCigarId: trusted ? (confirmedCigarId ?? null) : null,
+    resolvedAt: new Date().toISOString(),
+  });
+}
+
+export function subscribeUserScans(
+  userId: string,
+  callback: (scans: Scan[]) => void,
+): Unsubscribe {
+  const q = query(
+    collection(db, COLLECTIONS.SCANS),
+    where('userId', '==', userId),
+    orderBy('createdAt', 'desc'),
+  );
+  return onSnapshot(
+    q,
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Scan)),
+    (err) => {
+      console.error('subscribeUserScans error:', err);
+      callback([]);
+    },
+  );
+}
+
+// ─── Contributions (fila colaborativa de vitolas) ────────────────────────────
+
+export interface SubmitContributionInput {
+  userId: string;
+  scanId: string | null;
+  brandText: string;
+  lineText: string;
+  commercialNameText: string;
+  photoUrl: string | null;
+  notes: string | null;
+}
+
+export async function submitContribution(input: SubmitContributionInput): Promise<string> {
+  const contribution: Omit<Contribution, 'id'> = {
+    ...input,
+    status: 'pending',
+    createdCigarId: null,
+    reviewedBy: null,
+    reviewedAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  const ref = await addDoc(collection(db, COLLECTIONS.CONTRIBUTIONS), contribution);
+  return ref.id;
+}
+
+export function subscribePendingContributions(
+  callback: (items: Contribution[]) => void,
+): Unsubscribe {
+  const q = query(
+    collection(db, COLLECTIONS.CONTRIBUTIONS),
+    where('status', '==', 'pending'),
+    orderBy('createdAt', 'asc'),
+  );
+  return onSnapshot(
+    q,
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Contribution)),
+    (err) => {
+      console.error('subscribePendingContributions error:', err);
+      callback([]);
+    },
+  );
+}
+
+// Batch atômico (padrão likePost): a vitola oficial e a aprovação nunca divergem.
+export async function approveContribution(
+  contribution: Contribution,
+  adminUid: string,
+  cigarData: Omit<CigarCatalog, 'id' | 'communityRating'>,
+): Promise<string> {
+  const cigarRef = doc(collection(db, COLLECTIONS.CIGARS));
+  const batch = writeBatch(db);
+  batch.set(cigarRef, { ...cigarData, communityRating: 0 });
+  batch.update(doc(db, COLLECTIONS.CONTRIBUTIONS, contribution.id), {
+    status: 'approved',
+    createdCigarId: cigarRef.id,
+    reviewedBy: adminUid,
+    reviewedAt: new Date().toISOString(),
+  });
+  await batch.commit();
+  return cigarRef.id;
+}
+
+export async function rejectContribution(
+  contributionId: string,
+  adminUid: string,
+): Promise<void> {
+  await updateDoc(doc(db, COLLECTIONS.CONTRIBUTIONS, contributionId), {
+    status: 'rejected',
+    reviewedBy: adminUid,
+    reviewedAt: new Date().toISOString(),
+  });
 }
