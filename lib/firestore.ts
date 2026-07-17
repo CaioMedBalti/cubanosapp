@@ -101,7 +101,18 @@ export function subscribeFollowingFeed(
 
 export async function getCigars(): Promise<CigarCatalog[]> {
   const snap = await getDocs(collection(db, COLLECTIONS.CIGARS));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as CigarCatalog);
+  // scripts/seed-cuban-cigars.js não escreve flavorNotes/communityRating nos
+  // docs que cria (só nos que faz merge com o seed original) — normaliza aqui
+  // para as telas de descoberta poderem confiar no contrato de CigarCatalog.
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      ...data,
+      flavorNotes: data.flavorNotes ?? [],
+      communityRating: data.communityRating ?? 0,
+    } as CigarCatalog;
+  });
 }
 
 export async function getWhiskies(): Promise<WhiskyCatalog[]> {
