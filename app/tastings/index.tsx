@@ -21,9 +21,12 @@ export default function TastingsScreen() {
       cigarName={item.itemName ?? 'Sem nome'}
       brand={item.itemBrand}
       rating={item.rating}
+      rating10={item.rating10}
       notes={item.notes ?? undefined}
       flavorNotes={item.flavorNotes}
       date={timeAgo(item.date)}
+      phases={item.phases}
+      durationSec={item.durationSec}
       style={styles.card}
     />
   );

@@ -42,6 +42,8 @@ export const COLLECTIONS = {
   FOLLOWS: 'follows',
   LIKES: 'likes',
   LOUNGES: 'lounges',
+  SCANS: 'scans',
+  CONTRIBUTIONS: 'contributions',
 } as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -54,6 +56,9 @@ export interface UserProfile {
   theme: 'dark-luxury' | 'vintage' | 'modern';
   bio: string | null;
   createdAt: string;
+  // Modera a fila de contributions. Setado manualmente no console Firebase;
+  // as Security Rules leem este campo (users/{uid}.isAdmin) como fonte da verdade.
+  isAdmin?: boolean;
 }
 
 export interface Cigar {
@@ -92,6 +97,17 @@ export interface CollectionItem {
   notes: string | null;
 }
 
+// Um terço da degustação ao vivo (1/3, 2/3, 3/3). Offsets em segundos desde o
+// início da sessão — derivados de relógio de parede, não de intervalos.
+export interface TastingPhase {
+  third: 1 | 2 | 3;
+  startedAtSec: number;
+  durationSec: number;
+  flavorNotes: string[];
+  strengthFelt: 'suave' | 'medio-suave' | 'medio' | 'medio-forte' | 'forte' | null;
+  comment: string | null;
+}
+
 export interface Tasting {
   id: string;
   userId: string;
@@ -102,10 +118,20 @@ export interface Tasting {
   itemName?: string;
   itemBrand?: string;
   rating: 1 | 2 | 3 | 4 | 5;
+  // Escala 0–10 do fluxo pós-scan/degustação ao vivo. Quando presente, é a
+  // fonte da verdade; `rating` (1–5) é derivado no write para o feed antigo.
+  rating10?: number;
   notes: string | null;
   flavorNotes: string[];
   date: string;
   isPublic: boolean;
+  // Ligação com o double check do scanner (doc da coleção scans).
+  scanId?: string | null;
+  photoUrl?: string | null;
+  // 'live' = sessão cronometrada pelos três terços; 'quick' = retrospectiva.
+  smokeMode?: 'quick' | 'live';
+  durationSec?: number;
+  phases?: TastingPhase[];
 }
 
 export interface Post {
@@ -185,6 +211,9 @@ export interface CigarCatalog {
   // Chave da imagem local em assets/charutos (lib/cigarImages.ts),
   // ex.: 'Cohiba-Siglo-VI.png' — preenchida pelo scripts/seed-catalog.js.
   imageKey?: string | null;
+  // Tempo médio de fumada em minutos — gravado pelo scripts/seed-cuban-cigars.js;
+  // alimenta a sugestão de terços na degustação ao vivo.
+  smokeTimeMin?: number;
 }
 
 export interface WhiskyCatalog {
@@ -224,6 +253,51 @@ export interface HumidorEntry {
   boxCode?: string;
   purchaseCountry?: string;
   seller?: string;
+}
+
+// ─── Scanner double check ─────────────────────────────────────────────────────
+// Cada tentativa de scan vira um doc — inclusive abandonos ('abandoned' é o
+// estado INICIAL do doc, criado assim que a IA responde; desfechos reais são
+// updates). Nada do double check se perde: é o dataset de treino do produto.
+
+export interface Scan {
+  id: string;
+  userId: string;
+  // Firebase Storage; null quando o upload falhou — a foto nunca bloqueia o registro.
+  photoUrl: string | null;
+  // Doc id da coleção cigars sugerido pelo matching (null = nenhum candidato).
+  suggestedCigarId: string | null;
+  suggestedName?: string;
+  suggestedBrand?: string;
+  // Resposta crua da IA de visão — com result 'corrected', o par
+  // (aiGuess + suggestedCigarId errado + confirmedCigarId certo) é dado de treino.
+  aiGuess: { name: string; brand: string; origin?: string; strength?: string };
+  confidence: number; // 0–1: 1 match exato, score fuzzy, 0 sem candidato
+  result: 'confirmed' | 'corrected' | 'not_found' | 'abandoned';
+  confirmedCigarId: string | null;
+  // Derivado no write (lib/firestore.ts resolveScan): result confirmed/corrected.
+  // Validado por humano — o front nunca seta este campo diretamente.
+  trusted: boolean;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
+// Fila colaborativa de vitolas que não existem no catálogo. Admin aprova
+// (criando o doc em cigars) ou rejeita — ver app/admin/contributions.tsx.
+export interface Contribution {
+  id: string;
+  userId: string;
+  scanId: string | null;
+  brandText: string;
+  lineText: string;
+  commercialNameText: string;
+  photoUrl: string | null;
+  notes: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  createdCigarId: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
 }
 
 export interface CigarAIResult {

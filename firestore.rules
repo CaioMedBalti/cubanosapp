@@ -1,0 +1,132 @@
+rules_version = '2';
+
+// ⚠️ ATENÇÃO ANTES DO PRIMEIRO DEPLOY ⚠️
+// Este arquivo passa a ser a fonte da verdade das regras quando rodar
+// `firebase deploy --only firestore:rules` — o deploy SUBSTITUI integralmente
+// as regras do console. Os blocos das coleções pré-existentes abaixo foram
+// reconstruídos a partir do comportamento do app (lib/firestore.ts); compare
+// com as regras vigentes no console (havana-app → Firestore → Regras) e ajuste
+// antes de deployar.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+    // Fonte da verdade do papel de admin: users/{uid}.isAdmin (setado no console).
+    // Custa 1 read por avaliação — volume baixo, aceitável.
+    function isAdmin() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // ── users: perfil público para autenticados, escrita só do dono ──
+    match /users/{userId} {
+      allow read: if signedIn();
+      // isAdmin não pode ser auto-atribuído — só via console.
+      allow create: if isOwner(userId)
+        && !('isAdmin' in request.resource.data);
+      allow update: if isOwner(userId)
+        && request.resource.data.get('isAdmin', false) == resource.data.get('isAdmin', false);
+      allow delete: if false;
+
+      // Humidor é privado do dono.
+      match /humidor/{itemId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // ── cigars: catálogo oficial — leitura autenticada, escrita admin ──
+    // (aprovação de contribution cria docs aqui; seeds usam Admin SDK, que
+    // ignora rules. Nota: resetExampleData do client deixa de funcionar para
+    // não-admins — fluxo dev aceito.)
+    match /cigars/{cigarId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /whiskies/{whiskyId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── tastings: dono escreve; leitura do dono ou de degustações públicas ──
+    match /tastings/{tastingId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isOwner(resource.data.userId) || resource.data.isPublic == true;
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // ── posts: feed — leitura autenticada; contadores atualizáveis por
+    // qualquer autenticado (likes/comments incrementam via batch) ──
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if isOwner(request.resource.data.userId);
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['likesCount', 'commentsCount']);
+      allow delete: if isOwner(resource.data.userId);
+
+      match /comments/{commentId} {
+        allow read: if signedIn();
+        allow create: if isOwner(request.resource.data.userId);
+        allow update, delete: if isOwner(resource.data.userId);
+      }
+    }
+
+    // ── follows / likes: doc id determinístico, dono da ação cria/apaga ──
+    match /follows/{followId} {
+      allow read: if signedIn();
+      allow create: if isOwner(request.resource.data.followerId);
+      allow delete: if isOwner(resource.data.followerId);
+    }
+
+    match /likes/{likeId} {
+      allow read: if signedIn();
+      allow create: if isOwner(request.resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // ── lounges: aprovados são públicos; sugestões entram como pending ──
+    match /lounges/{loungeId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.status == 'pending';
+      allow update, delete: if isAdmin();
+    }
+
+    // ── scans: diário do double check do scanner ──
+    // Nasce 'abandoned' (estado inicial, não desfecho escrito depois);
+    // trusted precisa ser coerente com result em qualquer escrita.
+    match /scans/{scanId} {
+      allow create: if isOwner(request.resource.data.userId)
+        && request.resource.data.result == 'abandoned'
+        && request.resource.data.trusted == false;
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow update: if isOwner(resource.data.userId)
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.result in ['confirmed', 'corrected', 'not_found', 'abandoned']
+        && request.resource.data.trusted ==
+             (request.resource.data.result in ['confirmed', 'corrected']);
+      // Regra de ouro do produto: nenhum resultado de double check se perde.
+      allow delete: if false;
+    }
+
+    // ── contributions: fila colaborativa de vitolas ──
+    match /contributions/{contribId} {
+      allow create: if isOwner(request.resource.data.userId)
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdCigarId == null
+        && request.resource.data.reviewedBy == null;
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.status in ['approved', 'rejected']
+        && request.resource.data.reviewedBy == request.auth.uid;
+      allow delete: if false;
+    }
+  }
+}

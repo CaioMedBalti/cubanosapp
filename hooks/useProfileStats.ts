@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { subscribeTastingCount, subscribeFollowCounts } from '@/lib/firestore';
 
-export function useProfileStats(userId: string | null) {
+// publicOnly: passe true ao exibir perfil de terceiros (ver subscribeTastingCount).
+export function useProfileStats(userId: string | null, publicOnly = false) {
   const [tastingCount, setTastingCount] = useState(0);
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
@@ -13,7 +14,7 @@ export function useProfileStats(userId: string | null) {
       setFollowing(0);
       return;
     }
-    const unsubTastings = subscribeTastingCount(userId, setTastingCount);
+    const unsubTastings = subscribeTastingCount(userId, setTastingCount, publicOnly);
     const unsubFollows = subscribeFollowCounts(userId, (c) => {
       setFollowers(c.followers);
       setFollowing(c.following);
@@ -22,7 +23,7 @@ export function useProfileStats(userId: string | null) {
       unsubTastings();
       unsubFollows();
     };
-  }, [userId]);
+  }, [userId, publicOnly]);
 
   return { tastingCount, followers, following };
 }

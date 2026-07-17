@@ -154,6 +154,25 @@ export default function SettingsScreen() {
             <ThemeSwitcher />
           </View>
 
+          {profile?.isAdmin && (
+            <>
+              <Text style={[styles.sectionLabel, { color: theme.textMuted, marginTop: 24 }]}>ADMIN</Text>
+              <View
+                style={[
+                  styles.section,
+                  { backgroundColor: withAlpha(theme.card, 0.8), borderColor: withAlpha(theme.border, 0.4) },
+                ]}
+              >
+                <ThemedButton
+                  label="Moderação de vitolas"
+                  onPress={() => router.push('/admin/contributions')}
+                  variant="secondary"
+                  icon="shield-checkmark-outline"
+                />
+              </View>
+            </>
+          )}
+
           <ThemedButton
             label="Sair da conta"
             onPress={handleSignOut}

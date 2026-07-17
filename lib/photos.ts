@@ -8,6 +8,13 @@ export async function uploadUserCigarPhoto(userId: string, blob: Blob): Promise<
   return getDownloadURL(r);
 }
 
+export async function uploadScanPhoto(userId: string, blob: Blob): Promise<string> {
+  const path = `users/${userId}/scans/${Date.now()}.jpg`;
+  const r = ref(storage, path);
+  await uploadBytes(r, blob);
+  return getDownloadURL(r);
+}
+
 export async function uploadUserAvatar(userId: string, blob: Blob): Promise<string> {
   // Path estável: trocar o avatar sobrescreve o anterior em vez de acumular.
   const r = ref(storage, `users/${userId}/avatar.jpg`);

@@ -19,7 +19,8 @@ export default function PublicProfileScreen() {
   const { uid } = useLocalSearchParams<{ uid: string }>();
   const theme = useTheme();
   const myUid = useAuthStore((s) => s.uid);
-  const { tastingCount, followers, following } = useProfileStats(uid ?? null);
+  // Perfil de terceiros só conta degustações públicas (exigência das rules).
+  const { tastingCount, followers, following } = useProfileStats(uid ?? null, uid !== myUid);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -57,9 +58,12 @@ export default function PublicProfileScreen() {
       cigarName={item.itemName ?? 'Sem nome'}
       brand={item.itemBrand}
       rating={item.rating}
+      rating10={item.rating10}
       notes={item.notes ?? undefined}
       flavorNotes={item.flavorNotes}
       date={timeAgo(item.date)}
+      phases={item.phases}
+      durationSec={item.durationSec}
     />
   );
 

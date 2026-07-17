@@ -48,7 +48,7 @@ export default function RegisterScreen() {
         createdAt: serverTimestamp(),
       });
       setUid(credential.user.uid);
-      router.replace('/(tabs)/');
+      router.replace('/(tabs)');
     } catch (e: any) {
       if (e.code === 'auth/email-already-in-use') {
         setError('Este e-mail já está em uso.');
