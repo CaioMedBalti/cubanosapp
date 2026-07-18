@@ -29,7 +29,7 @@ import { ThemedButton } from '@/components/ui/ThemedButton';
 export default function ScanCaptureScreen() {
   const theme = useTheme();
   const uid = useAuthStore((s) => s.uid);
-  const { match, loading: catalogLoading } = useCatalogCigarMatching();
+  const { match } = useCatalogCigarMatching();
   const scanStore = useScanStore();
 
   const [identifying, setIdentifying] = useState(false);
@@ -72,42 +72,47 @@ export default function ScanCaptureScreen() {
     setIdentifying(true);
     setError('');
     try {
-      // Upload em paralelo com a identificação; se falhar, o scan é
-      // registrado com photoUrl null — a foto nunca bloqueia o double check.
-      const uploadPromise = (async () => {
-        const blob = await (await fetch(photoUri!)).blob();
-        return uploadScanPhoto(uid, blob);
-      })().catch(() => null);
-
+      // Só a IA fica no caminho crítico: a resposta aparece assim que ela
+      // responder. Upload e registro do scan rodam em background.
       const aiResult = await identifyCigarImage(
         photoBase64,
         (mimeType ?? 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/webp',
       );
-      const photoUrl = await uploadPromise;
 
       const matchResult = match(aiResult.name, aiResult.brand);
       const candidate = matchResult.type !== 'none' ? matchResult.entry : null;
       const confidence =
         matchResult.type === 'exact' ? 1 : matchResult.type === 'fuzzy' ? matchResult.confidence : 0;
 
-      const scanId = await createScan({
-        userId: uid,
-        photoUrl,
-        suggestedCigarId: candidate?.id ?? null,
-        suggestedName: candidate?.name,
-        suggestedBrand: candidate?.brand,
-        aiGuess: {
-          name: aiResult.name,
-          brand: aiResult.brand,
-          origin: aiResult.origin,
-          strength: aiResult.strength,
-        },
-        confidence,
-      });
-
-      scanStore.setPhotoUrl(photoUrl);
-      scanStore.setIdentification(aiResult, matchResult, scanId);
+      scanStore.setIdentification(aiResult, matchResult);
       router.push('/scan/confirm');
+
+      // Best-effort: o doc de scans nasce 'abandoned' e o scanId chega ao
+      // store quando resolver — nada disso bloqueia (nem quebra) a UX.
+      void (async () => {
+        const photoUrl = await (async () => {
+          const blob = await (await fetch(photoUri!)).blob();
+          return uploadScanPhoto(uid, blob);
+        })().catch(() => null);
+
+        const scanId = await createScan({
+          userId: uid,
+          photoUrl,
+          suggestedCigarId: candidate?.id ?? null,
+          suggestedName: candidate?.name,
+          suggestedBrand: candidate?.brand,
+          aiGuess: {
+            name: aiResult.name,
+            brand: aiResult.brand,
+            origin: aiResult.origin,
+            strength: aiResult.strength,
+          },
+          confidence,
+        });
+
+        useScanStore.getState().setPhotoUrl(photoUrl);
+        useScanStore.getState().setScanId(scanId);
+      })().catch(() => {});
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erro ao identificar pela imagem.');
     } finally {
@@ -158,7 +163,7 @@ export default function ScanCaptureScreen() {
                 label={identifying ? 'Identificando…' : 'Identificar'}
                 icon="sparkles-outline"
                 onPress={handleIdentify}
-                disabled={identifying || catalogLoading}
+                disabled={identifying}
                 loading={identifying}
               />
               <TouchableOpacity onPress={handleOpenCamera} style={styles.retake} disabled={identifying}>
@@ -171,7 +176,7 @@ export default function ScanCaptureScreen() {
             <View style={styles.loadingRow}>
               <ActivityIndicator color={theme.accent} size="small" />
               <Text style={[styles.loadingText, { color: theme.textMuted }]}>
-                Comparando com o catálogo…
+                Identificando com IA…
               </Text>
             </View>
           )}

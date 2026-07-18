@@ -14,7 +14,6 @@ import { useTheme } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { VideoBackground } from '@/components/ui/VideoBackground';
 import { HierarchyBadge } from '@/components/ui/HierarchyBadge';
-import { TexturedPanel } from '@/components/ui/TexturedPanel';
 import { withAlpha } from '@/lib/theme';
 import { FONTS } from '@/constants/typography';
 import { useHumidor } from '@/hooks/useHumidor';
@@ -68,7 +67,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Avatar + Badge */}
-          <TexturedPanel style={styles.heroSection} overlayOpacity={0.55}>
+          <View style={styles.heroSection}>
             <View
               style={[
                 styles.avatar,
@@ -91,7 +90,7 @@ export default function ProfileScreen() {
               {profile?.bio ?? 'Explorador de charutos e whiskies premium'}
             </Text>
             <HierarchyBadge tastingCount={tastingCount} size="lg" />
-          </TexturedPanel>
+          </View>
 
           {/* Stats */}
           <View

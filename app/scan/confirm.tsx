@@ -16,10 +16,12 @@ import { ThemedButton } from '@/components/ui/ThemedButton';
 // nada: o doc de scans já nasceu 'abandoned' na captura.
 export default function ScanConfirmScreen() {
   const theme = useTheme();
-  const { photoUri, match, scanId, setConfirmedCigar } = useScanStore();
+  const { photoUri, match, aiResult, setConfirmedCigar } = useScanStore();
   const [confirming, setConfirming] = useState(false);
 
-  if (!scanId || !match) return <Redirect href="/scan" />;
+  // scanId pode chegar depois (createScan roda em background) — o gate é a
+  // identificação em si.
+  if (!aiResult || !match) return <Redirect href="/scan" />;
 
   const candidate = match.type !== 'none' ? match.entry : null;
   const confidencePct =
@@ -30,7 +32,12 @@ export default function ScanConfirmScreen() {
     if (!candidate) return;
     setConfirming(true);
     try {
-      await resolveScan(scanId, 'confirmed', candidate.id);
+      // Best-effort: se o createScan em background ainda não terminou (ou
+      // falhou), a confirmação do usuário nunca fica presa nisso.
+      const scanId = useScanStore.getState().scanId;
+      if (scanId) {
+        await resolveScan(scanId, 'confirmed', candidate.id).catch(() => {});
+      }
       setConfirmedCigar(candidate);
       router.replace('/scan/rate');
     } finally {
@@ -46,7 +53,7 @@ export default function ScanConfirmScreen() {
             <Ionicons name="chevron-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>
-            {candidate ? 'É esse mesmo?' : 'Não encontramos'}
+            {candidate ? 'É esse mesmo?' : 'Identificado'}
           </Text>
           <View style={{ width: 24 }} />
         </View>
@@ -101,16 +108,58 @@ export default function ScanConfirmScreen() {
             </>
           ) : (
             <>
-              <Text style={[styles.noneTitle, { color: theme.text }]}>
-                Não encontramos essa vitola no catálogo
-              </Text>
+              {/* Sem match no catálogo: a resposta da IA é o conteúdo principal
+                  — nome, características e curiosidades, sem insistir em busca. */}
+              <View
+                style={[
+                  styles.candidateCard,
+                  { backgroundColor: theme.card, borderColor: withAlpha(theme.border, 0.4) },
+                ]}
+              >
+                <View style={styles.candidateBody}>
+                  <Text style={[styles.candidateBrand, { color: theme.accent }]}>
+                    {aiResult.brand.toUpperCase()}
+                  </Text>
+                  <Text style={[styles.candidateName, { color: theme.text }]}>{aiResult.name}</Text>
+                  <Text style={[styles.candidateMeta, { color: theme.textMuted }]}>
+                    {aiResult.origin} · {aiResult.strength}
+                  </Text>
+                </View>
+              </View>
+
+              {aiResult.flavorNotes?.length > 0 && (
+                <View style={styles.notesRow}>
+                  {aiResult.flavorNotes.map((note) => (
+                    <View
+                      key={note}
+                      style={[
+                        styles.noteChip,
+                        {
+                          backgroundColor: withAlpha(theme.accent, 0.12),
+                          borderColor: withAlpha(theme.accent, 0.3),
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.noteText, { color: theme.accent }]}>{note}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {!!aiResult.curiosities && (
+                <Text style={[styles.aiText, { color: theme.text }]}>{aiResult.curiosities}</Text>
+              )}
+              {!!aiResult.history && (
+                <Text style={[styles.aiText, { color: theme.textMuted }]}>{aiResult.history}</Text>
+              )}
+
               <Text style={[styles.noneSubtitle, { color: theme.textMuted }]}>
-                Você pode buscar manualmente ou cadastrar a vitola — sua contribuição ajuda a
-                construir a maior base de Habanos.
+                Essa vitola ainda não está no catálogo do app.
               </Text>
               <ThemedButton
                 label="Buscar no catálogo"
                 icon="search-outline"
+                variant="outline"
                 onPress={() => router.push('/scan/search')}
               />
               <ThemedButton
@@ -162,4 +211,13 @@ const styles = StyleSheet.create({
   confidenceText: { fontSize: 12, fontWeight: '800' },
   noneTitle: { fontSize: 17, fontWeight: '700', textAlign: 'center', marginTop: 8 },
   noneSubtitle: { fontSize: 13, textAlign: 'center', marginBottom: 8, lineHeight: 19 },
+  notesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  noteChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  noteText: { fontSize: 12, fontWeight: '600' },
+  aiText: { fontSize: 13, lineHeight: 20 },
 });

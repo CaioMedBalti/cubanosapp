@@ -13,6 +13,9 @@ export function useCatalogCigarMatching() {
   useEffect(() => {
     getCigars()
       .then(setCatalog)
+      // Catálogo vazio já é o fallback do matchCigar; falha aqui não pode virar
+      // unhandled rejection nem bloquear o fluxo de scan.
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 

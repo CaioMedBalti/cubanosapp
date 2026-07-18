@@ -3,11 +3,25 @@ import type { CigarAIResult, BulkParseItem } from './firebase';
 const BASE = process.env.EXPO_PUBLIC_AI_BASE_URL ?? '';
 
 async function post<T>(path: string, body: object): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  // Timeout: sem ele, um fetch pendurado deixa a UI em loading para sempre.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60_000);
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (controller.signal.aborted) {
+      throw new Error('A identificação demorou demais. Verifique sua conexão e tente novamente.');
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) {
     if (res.status === 413) {
       throw new Error('Foto muito grande. Tente novamente.');

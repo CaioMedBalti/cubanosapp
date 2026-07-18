@@ -21,8 +21,10 @@ interface ScanState {
   setIdentification: (
     aiResult: CigarAIResult,
     match: MatchResult<CigarCatalog>,
-    scanId: string,
   ) => void;
+  // Chegando depois da navegação: o createScan roda em background e grava o
+  // id quando resolver — a UI nunca espera por ele.
+  setScanId: (scanId: string) => void;
   setConfirmedCigar: (cigar: CigarCatalog) => void;
   reset: () => void;
 }
@@ -43,7 +45,8 @@ export const useScanStore = create<ScanState>()((set) => ({
   setPhoto: (photoUri, photoBase64, mimeType) =>
     set({ photoUri, photoBase64, mimeType }),
   setPhotoUrl: (photoUrl) => set({ photoUrl }),
-  setIdentification: (aiResult, match, scanId) => set({ aiResult, match, scanId }),
+  setIdentification: (aiResult, match) => set({ aiResult, match }),
+  setScanId: (scanId) => set({ scanId }),
   setConfirmedCigar: (confirmedCigar) => set({ confirmedCigar }),
   reset: () => set(initialState),
 }));
