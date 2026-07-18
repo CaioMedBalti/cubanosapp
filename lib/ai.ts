@@ -9,6 +9,9 @@ async function post<T>(path: string, body: object): Promise<T> {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
+    if (res.status === 413) {
+      throw new Error('Foto muito grande. Tente novamente.');
+    }
     const err = await res.json().catch(() => ({})) as { error?: string };
     throw new Error(err.error ?? `Erro ${res.status}`);
   }

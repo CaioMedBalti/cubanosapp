@@ -18,6 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const response = await client.chat.completions.create({
     model: 'gpt-4o',
     max_tokens: 512,
+    response_format: { type: 'json_object' },
     messages: [
       {
         role: 'user',

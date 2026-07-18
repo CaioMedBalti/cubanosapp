@@ -17,7 +17,7 @@ import { withAlpha } from '@/lib/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useScanStore } from '@/store/scanStore';
 import { identifyCigarImage } from '@/lib/ai';
-import { uploadScanPhoto } from '@/lib/photos';
+import { uploadScanPhoto, compressScanPhoto } from '@/lib/photos';
 import { createScan } from '@/lib/firestore';
 import { useCatalogCigarMatching } from '@/hooks/useCatalogCigarMatching';
 import { VideoBackground } from '@/components/ui/VideoBackground';
@@ -43,7 +43,6 @@ export default function ScanCaptureScreen() {
         result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ['images'],
           quality: 0.7,
-          base64: true,
         });
       } else {
         const { status: perm } = await ImagePicker.requestCameraPermissionsAsync();
@@ -54,18 +53,13 @@ export default function ScanCaptureScreen() {
         result = await ImagePicker.launchCameraAsync({
           mediaTypes: ['images'],
           quality: 0.7,
-          base64: true,
           allowsEditing: true,
           aspect: [4, 3],
         });
       }
       if (!result.canceled && result.assets?.[0]) {
-        const asset = result.assets[0];
-        scanStore.setPhoto(
-          asset.uri,
-          asset.base64 ?? '',
-          asset.mimeType ?? 'image/jpeg',
-        );
+        const compressed = await compressScanPhoto(result.assets[0].uri);
+        scanStore.setPhoto(compressed.uri, compressed.base64, compressed.mimeType);
       }
     } catch {
       setError('Não foi possível abrir a câmera.');
